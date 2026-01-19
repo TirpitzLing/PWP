@@ -2,7 +2,8 @@
 
 ## Meeting 1.
 * **DATE:**
-* **ASSISTANTS:**
+* **PARTICIPANTS:**
+* **TEACHER:**
 
 ### Minutes
 *Summary of what was discussed during the meeting*
@@ -15,7 +16,8 @@
 
 ## Meeting 2.
 * **DATE:**
-* **ASSISTANTS:**
+* **PARTICIPANTS:**
+* **TEACHER:**
 
 ### Minutes
 *Summary of what was discussed during the meeting*
@@ -28,20 +30,8 @@
 
 ## Meeting 3.
 * **DATE:**
-* **ASSISTANTS:**
-
-### Minutes
-*Summary of what was discussed during the meeting*
-
-### Action points
-*List here the actions points discussed with assistants*
-
-
-
-
-## Meeting 4.
-* **DATE:**
-* **ASSISTANTS:**
+* **PARTICIPANTS:**
+* **TEACHER:**
 
 ### Minutes
 *Summary of what was discussed during the meeting*
@@ -54,7 +44,8 @@
 
 ## Midterm meeting
 * **DATE:**
-* **ASSISTANTS:**
+* **PARTICIPANTS:**
+* **TEACHER:**
 
 ### Minutes
 *Summary of what was discussed during the meeting*
@@ -67,7 +58,8 @@
 
 ## Final meeting
 * **DATE:**
-* **ASSISTANTS:**
+* **PARTICIPANTS:**
+* **TEACHER:**
 
 ### Minutes
 *Summary of what was discussed during the meeting*
