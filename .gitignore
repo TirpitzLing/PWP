@@ -1,2 +1,4 @@
-database-ddl2/__pycache__
+__pycache__/
+*.py[cod]
+.vscode/
 PWP/
