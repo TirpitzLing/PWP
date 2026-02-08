@@ -51,7 +51,6 @@ class Ingredient(db.Model):
     recipe_links = db.relationship("RecipeIngredient", back_populates="ingredient")
 
 
-
 class Recipe(db.Model):
     __tablename__ = "recipes"
 
@@ -64,8 +63,8 @@ class Recipe(db.Model):
     cuisine_type = db.Column(db.String(64))
     cooking_methods = db.Column(db.Text)
 
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)\
-    
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
     creator = db.relationship("User", back_populates="recipes")
     ingredients = db.relationship("RecipeIngredient", back_populates="recipe")
     # cooking_methods = db.relationship("RecipeCookingMethod", back_populates="recipe")
@@ -75,11 +74,11 @@ class Recipe(db.Model):
 class RecipeIngredient(db.Model):
     __tablename__ = "recipe_ingredients"
 
-    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"), primary_key=True)
-    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredients.id"), primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredients.id", ondelete="CASCADE"), primary_key=True)
 
-    amount = db.Column(db.Float) # numeral
-    unit = db.Column(db.String(16)) # g, ml
+    amount = db.Column(db.Float)  # numeral
+    unit = db.Column(db.String(16))  # g, ml
 
     recipe = db.relationship("Recipe", back_populates="ingredients")
     ingredient = db.relationship("Ingredient", back_populates="recipe_links")
@@ -88,8 +87,8 @@ class RecipeIngredient(db.Model):
 class Save(db.Model):
     __tablename__ = "save"
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True)
     created_at = db.Column(db.DateTime)
 
     user = db.relationship("User", back_populates="saved_recipes")
