@@ -49,8 +49,6 @@ The database is defined and managed using SQLAlchemy ORM within Flask.
 
 **Relationships** are represented using `db.relationship()` and foreign keys using `db.ForeignKey()`.
 
-**SQLite database file** is created in `instance/dbms.db` when `db.create_all()` is called.
-
 ### external libraries and resources:
 * [Flask-SQLAlchemy Documentation](https://flask-sqlalchemy.palletsprojects.com/)
 * [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/14/orm/tutorial.html)
