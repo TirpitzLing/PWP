@@ -3,8 +3,7 @@ from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
-from database.dbcreation import db
-from api.app import api, cache
+from api.extensions import db, api, cache
 from database.dbcreation import Recipe
 
 class RecipeCollection(Resource):

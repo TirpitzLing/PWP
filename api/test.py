@@ -1,8 +1,10 @@
+from datetime import datetime
 import json
 import pytest
 
 from api.app import app
-from database.dbcreation import db, Recipe, Ingredient, User
+from api.extensions import db
+from database.dbcreation import Recipe, Ingredient, RecipeIngredient, User
 
 
 @pytest.fixture
@@ -10,18 +12,56 @@ def client():
     ctx = app.app_context()
     ctx.push()
 
+    db.drop_all() 
     db.create_all()
-    _populate_db()
-
-    yield app.test_client()
-
-    db.session.rollback()
-    db.drop_all()
-    db.session.remove()
-    ctx.pop()
+    
+    try:
+        _populate_db()
+        yield app.test_client()
+    finally:
+        db.session.remove()
+        db.drop_all()
+        ctx.pop()
 
 
 def _populate_db():
+    user = User(
+        username="test-user",
+        pwd="test-password",
+        email="test@example.com",
+        created_at=datetime.now(),
+        allergies="ingredient-2"
+    )
+    db.session.add(user)
+    db.session.flush()
+
+    for i in range(1, 4):
+        recipe = Recipe(
+            title=f"test-recipe-{i}",
+            procedure=f"Test procedure {i}",
+            servings=i,
+            cuisine_type=f"cuisine-{i}",
+            cooking_methods=f"method-{i}",
+            created_at=datetime.now(),
+            created_by=user.id
+        )
+        
+        ing = Ingredient(name=f"ingredient-{i}")
+        db.session.add(ing)
+        db.session.flush()
+
+        assoc = RecipeIngredient(
+            recipe=recipe, 
+            ingredient=ing, 
+            amount=1.0, 
+            unit="piece"
+        )
+        db.session.add(assoc)
+        db.session.add(recipe)
+
+    db.session.commit()
+
+    
     for i in range(1, 4):
         recipe = Recipe(
             title = f"test-recipe-{i}",

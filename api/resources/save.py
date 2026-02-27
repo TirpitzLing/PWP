@@ -2,8 +2,7 @@ from flask import request, Response
 from flask_restful import Resource
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
 from database.dbcreation import Recipe, User
-from database.dbcreation import db
-from api.app import api, cache
+from api.extensions import db, api, cache
 
 class SaveCollection(Resource):
 

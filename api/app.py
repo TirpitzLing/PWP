@@ -5,15 +5,12 @@ from api.resources.recipeIngredient import RecipeIngredientCollection, RecipeIng
 from api.resources.save import SaveCollection, SaveItem
 from database.dbcreation import User, Ingredient, Recipe, RecipeIngredient, Save
 from flask import Flask, Response, request
-from flask_restful import Api, Resource
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from werkzeug.routing import BaseConverter
 from jsonschema import validate, ValidationError, draft7_format_checker
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
-from flask_caching import Cache
+from api.extensions import db, api, cache
 
 
 db_path = os.path.join(
@@ -29,9 +26,10 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["CACHE_TYPE"] = "FileSystemCache"
 app.config["CACHE_DIR"] = os.path.join(app.instance_path, "cache")
-db = SQLAlchemy(app)
-api = Api(app)
-cache = Cache(app)
+
+db.init_app(app)
+api.init_app(app)
+cache.init_app(app)
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
