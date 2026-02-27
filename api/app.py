@@ -97,21 +97,21 @@ app.url_map.converters["user"] = UserConverter
 app.url_map.converters["ingredient"] = IngredientConverter
 app.url_map.converters["save"] = SaveConverter
 
-api.add_resource(RecipeCollection, "/recipes/")
-api.add_resource(RecipeItem, "/recipes/<recipe:recipe>/")
+api.add_resource(RecipeCollection, "/api/recipes/")
+api.add_resource(RecipeItem, "/api/recipes/<recipe:recipe>/")
 api.add_resource(
     RecipeIngredientCollection,
-    "/recipes/<recipe:recipe>/ingredients/"
+    "/api/recipes/<recipe:recipe>/ingredients/"
 )
 api.add_resource(
     RecipeIngredientItem,
-    "/recipes/<recipe:recipe>/ingredients/<ingredient:ingredient>/"
+    "/api/recipes/<recipe:recipe>/ingredients/<ingredient:ingredient>/"
 )
 api.add_resource(
     SaveCollection,
-    "/users/<user:user>/saves/"
+    "/api/users/<user:user>/saves/"
 )
 api.add_resource(
     SaveItem,
-    "/users/<user:user>/saves/<recipe:recipe>/"
+    "/api/users/<user:user>/saves/<recipe:recipe>/"
 )
