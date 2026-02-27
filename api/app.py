@@ -1,5 +1,8 @@
 from datetime import datetime
 import os
+from api.resources.recipe import RecipeCollection, RecipeItem
+from api.resources.recipeIngredient import RecipeIngredientCollection, RecipeIngredientItem
+from api.resources.save import SaveCollection, SaveItem
 from database.dbcreation import User, Ingredient, Recipe, RecipeIngredient, Save
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
@@ -58,8 +61,18 @@ class UserConverter(BaseConverter):
         
     def to_url(self, db_user):
         return str(db_user.id)
-    
 
+class IngredientConverter(BaseConverter):
+    
+    def to_python(self, ingredient_id):
+        db_ingredient = Ingredient.query.filter_by(id=ingredient_id).first()
+        if db_ingredient is None:
+            raise NotFound(f"Ingredient with id {ingredient_id} not found.")
+        return db_ingredient
+        
+    def to_url(self, db_ingredient):
+        return str(db_ingredient.id)
+    
 class SaveConverter(BaseConverter):
 
     def to_python(self, save_id):
@@ -81,4 +94,24 @@ class SaveConverter(BaseConverter):
 
 app.url_map.converters["recipe"] = RecipeConverter
 app.url_map.converters["user"] = UserConverter
+app.url_map.converters["ingredient"] = IngredientConverter
 app.url_map.converters["save"] = SaveConverter
+
+api.add_resource(RecipeCollection, "/recipes/")
+api.add_resource(RecipeItem, "/recipes/<recipe:recipe>/")
+api.add_resource(
+    RecipeIngredientCollection,
+    "/recipes/<recipe:recipe>/ingredients/"
+)
+api.add_resource(
+    RecipeIngredientItem,
+    "/recipes/<recipe:recipe>/ingredients/<ingredient:ingredient>/"
+)
+api.add_resource(
+    SaveCollection,
+    "/users/<user:user>/saves/"
+)
+api.add_resource(
+    SaveItem,
+    "/users/<user:user>/saves/<recipe:recipe>/"
+)
