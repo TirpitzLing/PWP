@@ -1,11 +1,10 @@
 # Overview
 
 
-This folder contains the database script and instance for **Daily Bowl Management System**. The database schema is implemented using SQLAlchemy ORM with Flask, and the database file is stored in instance/dbms.db
+This folder contains the database script and instance for **Daily Bowl Management System**. The database schema is implemented using SQLAlchemy ORM within Flask, and the database file is stored in `./instance/dbms.db`
 
 ```text
-database-ddl2/
-│
+database/
 ├── dbcreation.py        # Database models and ORM setup
 ├── requirements.txt     # Python dependencies
 ├── instance/
@@ -18,15 +17,20 @@ database-ddl2/
 
 The project uses the following Python libraries:
 
--**Flask** – Web framework used to manage the application context
--**Flask-SQLAlchemy** – Flask extension for SQLAlchemy ORM integration
--**SQLAlchemy** – ORM for database interaction
+- **Flask** – Web framework used to manage the application context
+- **Flask-SQLAlchemy** – Flask extension for SQLAlchemy ORM integration
+- **SQLAlchemy** – ORM for database interaction
 
 ## Installation
 
-It is recommended to use a Python virtual environment. 
+To install these dependencies, it's highly recommended that you use a virtual environment. The Python version we're using is Python 3.10.
 
-To install all dependencies:
+Here are 2 tutorials about how to create a virtual environment for Python. You can either use venv or conda:
+
+1. https://docs.python.org/3/library/venv.html
+2. https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
+
+After the virtual environment is set up, run the following command under the this directory (`database/`) to install all required packages:
 
 ```bash
 pip install -r requirements.txt
@@ -34,16 +38,15 @@ pip install -r requirements.txt
 
 # 2. Database Type and Version
 
-
-**Database:** SQLite 
-
-**Version Tested:** SQLite 3.x (default bundled with Python)
-
+We use SQLite as the database engine for data persistence. **SQLite 3.x** is built into the standard Python library, so no separate installation is required.
 
 ## 3. Database Framework Setup
 
+Since the database is defined and managed using SQLAlchemy ORM within Flask, setting up the framework means installing the necessary Python bindings.
 
-The database is defined and managed using SQLAlchemy ORM within Flask.
+1. Activate your virtual environment.
+2. The `requirements.txt` installation step has already installed SQLAlchemy.
+3. No external server configuration (such as MySQL) is needed.
 
 **Models** are defined as Python classes: `User`, `Ingredient`, `Recipe`, `RecipeIngredient`, `Save`.
 
@@ -69,7 +72,10 @@ db.create_all()
 ctx.pop()
 ```
 
+This script generates a file named `[dbms.db]` in `database/instance/` directory.
+
 ## Populating the Database
+
 To populate the database with initial data, you can create a script or use the Python terminal. For example, to add a new user: 
 
 ```python
