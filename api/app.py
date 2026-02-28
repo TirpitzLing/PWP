@@ -9,12 +9,12 @@ from api.resources.save import SaveCollection, SaveItem
 from api.resources.ingredient import IngredientCollection, IngredientItem
 from api.resources.user import UserCollection, UserItem, UserRecipeCollection
 from database.dbcreation import User, Ingredient, Recipe, RecipeIngredient, Save
-from flask import Flask, Response, request
+from flask import Flask, Response, request, jsonify
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from werkzeug.routing import BaseConverter
 from jsonschema import validate, ValidationError, draft7_format_checker
-from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
+from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType, HTTPException
 from api.extensions import db, api, cache
 
 
@@ -115,3 +115,18 @@ api.add_resource(SaveItem, "/api/users/<user:user>/saves/<recipe:recipe>/")
 # register ingredient routes
 api.add_resource(IngredientCollection, "/api/ingredients/")
 api.add_resource(IngredientItem, "/api/ingredients/<ingredient:ingredient>/")
+
+
+# so raise BadRequest returns json not html
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+    return (
+        jsonify(
+            {
+                "code": e.code,
+                "name": e.name,
+                "description": e.description,
+            }
+        ),
+        e.code,
+    )
