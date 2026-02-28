@@ -11,8 +11,12 @@ from database.dbcreation import User
 class UserCollection(Resource):
 
     def get(self):
-        # get all registered users
-        users = User.query.all()
+        # get limit and offset from query string
+        limit = request.args.get("limit", 10, type=int)
+        offset = request.args.get("offset", 0, type=int)
+
+        # apply pagination
+        users = User.query.limit(limit).offset(offset).all()
         return [u.serialize() for u in users]
 
     def post(self):

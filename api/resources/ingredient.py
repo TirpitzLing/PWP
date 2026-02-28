@@ -8,10 +8,14 @@ from database.dbcreation import Ingredient
 
 class IngredientCollection(Resource):
 
-    @cache.cached(timeout=None)
+    @cache.cached(timeout=None, query_string=True)
     def get(self):
-        # return all available ingredients
-        ingredients = Ingredient.query.all()
+        # get limit and offset from query string, default to limit=10, offset=0
+        limit = request.args.get("limit", 10, type=int)
+        offset = request.args.get("offset", 0, type=int)
+
+        # apply pagination to query
+        ingredients = Ingredient.query.limit(limit).offset(offset).all()
         return [i.serialize() for i in ingredients]
 
     def post(self):
