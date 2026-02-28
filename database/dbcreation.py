@@ -16,7 +16,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), nullable=False, unique=True)
     pwd = db.Column(db.String(128), nullable=False)
-    email = db.Column(db.String(128), nullable=False, unique=True)
+    email = db.Column(
+        db.String(128),
+        nullable=False,
+        unique=True,
+    )
     created_at = db.Column(db.DateTime, nullable=False)
 
     # diet = db.Column(
@@ -35,7 +39,13 @@ class User(db.Model):
     # allergies = db.relationship("UserAllergy", back_populates="user")
 
     def serialize(self):
-        return {"id": self.id, "username": self.username, "email": self.email, "created_at": self.created_at.isoformat(), "allergies": self.allergies}
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "created_at": self.created_at.isoformat(),
+            "allergies": self.allergies,
+        }
 
     def deserialize(self, doc):
         self.username = doc["username"]
@@ -50,13 +60,20 @@ class User(db.Model):
     def json_schema():
         return {
             "type": "object",
-            "required": ["username", "email", "pwd"],
+            "required": [
+                "username",
+                "email",
+                "pwd",
+            ],
             "properties": {
                 "id": {"type": "integer"},
                 "username": {"type": "string"},
                 "email": {"type": "string"},
                 "pwd": {"type": "string"},
-                "created_at": {"type": ["string", "null"], "format": "date-time"},
+                "created_at": {
+                    "type": ["string", "null"],
+                    "format": "date-time",
+                },
                 "allergies": {"type": ["string", "null"]},
             },
         }
@@ -76,7 +93,10 @@ class Ingredient(db.Model):
     protein = db.Column(db.Float)
     fat = db.Column(db.Float)
 
-    recipe_links = db.relationship("RecipeIngredient", back_populates="ingredient")
+    recipe_links = db.relationship(
+        "RecipeIngredient",
+        back_populates="ingredient",
+    )
 
     def serialize(self):
         return {
@@ -101,7 +121,10 @@ class Ingredient(db.Model):
 
     @staticmethod
     def json_schema():
-        schema = {"type": "object", "required": ["name"]}
+        schema = {
+            "type": "object",
+            "required": ["name"],
+        }
 
         props = schema["properties"] = {}
 
@@ -131,10 +154,17 @@ class Recipe(db.Model):
     cuisine_type = db.Column(db.String(64))
     cooking_methods = db.Column(db.Text)
 
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     creator = db.relationship("User", back_populates="recipes")
-    ingredients = db.relationship("RecipeIngredient", back_populates="recipe")
+    ingredients = db.relationship(
+        "RecipeIngredient",
+        back_populates="recipe",
+    )
     # cooking_methods = db.relationship("RecipeCookingMethod", back_populates="recipe")
     saved_by = db.relationship("Save", back_populates="recipe")
 
@@ -163,7 +193,10 @@ class Recipe(db.Model):
 
     @staticmethod
     def json_schema():
-        schema = {"type": "object", "required": ["title", "created_by"]}
+        schema = {
+            "type": "object",
+            "required": ["title", "created_by"],
+        }
 
         props = schema["properties"] = {}
 
@@ -171,7 +204,10 @@ class Recipe(db.Model):
         props["title"] = {"type": "string"}
         props["procedure"] = {"type": ["string", "null"]}
 
-        props["created_at"] = {"type": "string", "format": "date-time"}
+        props["created_at"] = {
+            "type": "string",
+            "format": "date-time",
+        }
 
         props["servings"] = {"type": ["integer", "null"]}
         props["cuisine_type"] = {"type": ["string", "null"]}
@@ -184,17 +220,33 @@ class Recipe(db.Model):
 class RecipeIngredient(db.Model):
     __tablename__ = "recipe_ingredients"
 
-    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True)
-    ingredient_id = db.Column(db.Integer, db.ForeignKey("ingredients.id", ondelete="CASCADE"), primary_key=True)
+    recipe_id = db.Column(
+        db.Integer,
+        db.ForeignKey("recipes.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    ingredient_id = db.Column(
+        db.Integer,
+        db.ForeignKey("ingredients.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
 
     amount = db.Column(db.Float)  # numeral
     unit = db.Column(db.String(16))  # g, ml
 
     recipe = db.relationship("Recipe", back_populates="ingredients")
-    ingredient = db.relationship("Ingredient", back_populates="recipe_links")
+    ingredient = db.relationship(
+        "Ingredient",
+        back_populates="recipe_links",
+    )
 
     def serialize(self):
-        return {"recipe_id": self.recipe_id, "ingredient_id": self.ingredient_id, "amount": self.amount, "unit": self.unit}
+        return {
+            "recipe_id": self.recipe_id,
+            "ingredient_id": self.ingredient_id,
+            "amount": self.amount,
+            "unit": self.unit,
+        }
 
     def deserialize(self, doc):
         self.amount = doc.get("amount")
@@ -202,7 +254,10 @@ class RecipeIngredient(db.Model):
 
     @staticmethod
     def json_schema():
-        schema = {"type": "object", "required": []}
+        schema = {
+            "type": "object",
+            "required": [],
+        }
 
         props = schema["properties"] = {}
 
@@ -217,15 +272,27 @@ class RecipeIngredient(db.Model):
 class Save(db.Model):
     __tablename__ = "save"
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id", ondelete="CASCADE"), primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    recipe_id = db.Column(
+        db.Integer,
+        db.ForeignKey("recipes.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
     created_at = db.Column(db.DateTime, nullable=False)
 
     user = db.relationship("User", back_populates="saved_recipes")
     recipe = db.relationship("Recipe", back_populates="saved_by")
 
     def serialize(self):
-        return {"user_id": self.user_id, "recipe_id": self.recipe_id, "created_at": self.created_at.isoformat()}
+        return {
+            "user_id": self.user_id,
+            "recipe_id": self.recipe_id,
+            "created_at": self.created_at.isoformat(),
+        }
 
     def deserialize(self, doc):
         if "created_at" in doc:
@@ -233,13 +300,19 @@ class Save(db.Model):
 
     @staticmethod
     def json_schema():
-        schema = {"type": "object", "required": []}
+        schema = {
+            "type": "object",
+            "required": [],
+        }
 
         props = schema["properties"] = {}
 
         props["user_id"] = {"type": "integer"}
         props["recipe_id"] = {"type": "integer"}
 
-        props["created_at"] = {"type": "string", "format": "date-time"}
+        props["created_at"] = {
+            "type": "string",
+            "format": "date-time",
+        }
 
         return schema
