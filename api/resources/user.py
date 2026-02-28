@@ -1,3 +1,8 @@
+"""
+API resources for managing users.
+Handles user registration, profile updates, account deletion, and fetching user recipes.
+"""
+
 from datetime import datetime
 from flask import request, Response
 from flask_restful import Resource
@@ -9,8 +14,13 @@ from database.dbcreation import User
 
 
 class UserCollection(Resource):
+    """Resource for managing a collection of users."""
 
     def get(self):
+        """
+        Retrieve a paginated list of all users.
+        Uses limit and offset for pagination.
+        """
         # get limit and offset from query string
         limit = request.args.get("limit", 10, type=int)
         offset = request.args.get("offset", 0, type=int)
@@ -20,9 +30,12 @@ class UserCollection(Resource):
         return [u.serialize() for u in users]
 
     def post(self):
+        """
+        Register a new user in the system.
+        """
         # register a new user
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(description="Request payload must be JSON.")
 
         try:
             validate(request.json, User.json_schema())
@@ -40,21 +53,28 @@ class UserCollection(Resource):
             db.session.add(user)
             db.session.commit()
         except IntegrityError:
-            raise Conflict(description="username or email already exists")
+            raise Conflict(description="Username or email already exists")
 
         return Response(status=201, headers={"Location": api.url_for(UserItem, user=user)})
 
 
 class UserItem(Resource):
+    """Resource for managing a specific user profile."""
 
     def get(self, user):
+        """
+        Retrieve details of a specific user profile.
+        """
         # retrieve user profile
         return user.serialize()
 
     def put(self, user):
+        """
+        Update user information including password, email, and allergies.
+        """
         # update user information including allergies
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(description="Request payload must be JSON.")
 
         try:
             validate(request.json, User.json_schema())
@@ -67,6 +87,9 @@ class UserItem(Resource):
         return Response(status=204)
 
     def delete(self, user):
+        """
+        Delete a specific user account from the system.
+        """
         # delete a user account
         db.session.delete(user)
         db.session.commit()
@@ -74,7 +97,11 @@ class UserItem(Resource):
 
 
 class UserRecipeCollection(Resource):
+    """Resource for retrieving recipes created by a specific user."""
 
     def get(self, user):
+        """
+        Retrieve all recipes created by this specific user.
+        """
         # get all recipes created by this user
         return [r.serialize() for r in user.recipes]

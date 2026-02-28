@@ -1,3 +1,8 @@
+"""
+API resources for managing recipe ingredients.
+Handles adding, updating, and removing ingredients within a specific recipe.
+"""
+
 from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
@@ -8,16 +13,24 @@ from database.dbcreation import Ingredient, RecipeIngredient
 
 
 class RecipeIngredientCollection(Resource):
+    """Resource for managing a collection of ingredients for a specific recipe."""
 
     @cache.cached(timeout=None)
     def get(self, recipe):
+        """
+        Retrieve a list of all ingredients associated with a specific recipe.
+        """
         # list all ingredients for a recipe
         return [i.serialize() for i in recipe.ingredients]
 
     def post(self, recipe):
+        """
+        Add a new ingredient to a specific recipe.
+        Invalidates cache upon successful addition.
+        """
         # add a new ingredient to the recipe with amount
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(description="Request payload must be JSON.")
 
         try:
             validate(request.json, RecipeIngredient.json_schema())
@@ -27,7 +40,7 @@ class RecipeIngredientCollection(Resource):
         # handle no existing ingredient error
         ingredient_id = request.json.get("ingredient_id")
         if not ingredient_id:
-            raise BadRequest(description="missing ingredient_id")
+            raise BadRequest(description="Missing ingredient_id in the request payload.")
 
         ingredient = Ingredient.query.get_or_404(ingredient_id)
 
@@ -44,17 +57,24 @@ class RecipeIngredientCollection(Resource):
             db.session.rollback()
             raise Conflict(description="This ingredient has already been added to the recipe")
 
+        cache.clear()
+
         return Response(
             status=201, headers={"Location": api.url_for(RecipeIngredientItem, recipe=recipe, ingredient=ingredient)}
         )
 
 
 class RecipeIngredientItem(Resource):
+    """Resource for managing a specific ingredient item within a recipe."""
 
     def put(self, recipe, ingredient):
+        """
+        Update the amount and unit of a specific ingredient in a recipe.
+        Invalidates cache upon successful update.
+        """
         # update the amount and unit of an ingredient
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(description="Request payload must be JSON.")
 
         try:
             validate(request.json, RecipeIngredient.json_schema())
@@ -64,18 +84,25 @@ class RecipeIngredientItem(Resource):
         assoc = RecipeIngredient.query.filter_by(recipe_id=recipe.id, ingredient_id=ingredient.id).first()
 
         if not assoc:
-            raise NotFound
+            raise NotFound(description="Ingredient association not found in this recipe.")
 
         assoc.deserialize(request.json)
         db.session.commit()
+        cache.clear()
         return Response(status=204)
 
     def delete(self, recipe, ingredient):
+        """
+        Remove a specific ingredient from a recipe.
+        Invalidates cache upon successful deletion.
+        """
         # remove an ingredient from the recipe
         assoc = RecipeIngredient.query.filter_by(recipe_id=recipe.id, ingredient_id=ingredient.id).first()
 
         if assoc:
             db.session.delete(assoc)
             db.session.commit()
+
+            cache.clear()
 
         return Response(status=204)
