@@ -1,6 +1,5 @@
 # Overview
 
-
 This folder contains the database script and instance for **Daily Bowl Management System**. The database schema is implemented using SQLAlchemy ORM within Flask, and the database file is stored in `./instance/dbms.db`
 
 ```text
@@ -13,7 +12,6 @@ database/
 ```
 
 # 1. Dependencies
-
 
 The project uses the following Python libraries:
 
@@ -53,15 +51,15 @@ Since the database is defined and managed using SQLAlchemy ORM within Flask, set
 **Relationships** are represented using `db.relationship()` and foreign keys using `db.ForeignKey()`.
 
 ### external libraries and resources:
-* [Flask-SQLAlchemy Documentation](https://flask-sqlalchemy.palletsprojects.com/)
-* [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/14/orm/tutorial.html)
-* [SQLite Official Documentation](https://www.sqlite.org/docs.html)
 
+- [Flask-SQLAlchemy Documentation](https://flask-sqlalchemy.palletsprojects.com/)
+- [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/14/orm/tutorial.html)
+- [SQLite Official Documentation](https://www.sqlite.org/docs.html)
 
 # 4. setup and populate
 
-
 ## Database Creation
+
 To create the database and tables, open a Python terminal and run the following commands:
 
 ```python
@@ -76,7 +74,7 @@ This script generates a file named `[dbms.db]` in `database/instance/` directory
 
 ## Populating the Database
 
-To populate the database with initial data, you can create a script or use the Python terminal. For example, to add a new user: 
+To populate the database with initial data, you can create a script or use the Python terminal. For example, to add a new user:
 
 ```python
 from dbcreation import db, app

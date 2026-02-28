@@ -12,9 +12,9 @@ def client():
     ctx = app.app_context()
     ctx.push()
 
-    db.drop_all() 
+    db.drop_all()
     db.create_all()
-    
+
     try:
         _populate_db()
         yield app.test_client()
@@ -25,13 +25,7 @@ def client():
 
 
 def _populate_db():
-    user = User(
-        username="test-user",
-        pwd="test-password",
-        email="test@example.com",
-        created_at=datetime.now(),
-        allergies="ingredient-2"
-    )
+    user = User(username="test-user", pwd="test-password", email="test@example.com", created_at=datetime.now(), allergies="ingredient-2")
     db.session.add(user)
     db.session.flush()
 
@@ -43,42 +37,32 @@ def _populate_db():
             cuisine_type=f"cuisine-{i}",
             cooking_methods=f"method-{i}",
             created_at=datetime.now(),
-            created_by=user.id
+            created_by=user.id,
         )
-        
+
         ing = Ingredient(name=f"ingredient-{i}")
         db.session.add(ing)
         db.session.flush()
 
-        assoc = RecipeIngredient(
-            recipe=recipe, 
-            ingredient=ing, 
-            amount=1.0, 
-            unit="piece"
-        )
+        assoc = RecipeIngredient(recipe=recipe, ingredient=ing, amount=1.0, unit="piece")
         db.session.add(assoc)
         db.session.add(recipe)
 
     db.session.commit()
 
-    
     for i in range(1, 4):
         recipe = Recipe(
-            title = f"test-recipe-{i}",
-            procedure = f"Test procedure {i}",
-            servings = i,
-            cuisine_type = f"cuisine-{i}",
-            cooking_methods = f"method-{i}",
+            title=f"test-recipe-{i}",
+            procedure=f"Test procedure {i}",
+            servings=i,
+            cuisine_type=f"cuisine-{i}",
+            cooking_methods=f"method-{i}",
         )
         ing = Ingredient(name=f"ingredient-{i}")
         recipe.ingredients.append(ing)
         db.session.add(recipe)
 
-    user = User(
-        username="test-user",
-        pwd="test-password",
-        email="test@example.com"
-        )
+    user = User(username="test-user", pwd="test-password", email="test@example.com")
     allergy = Ingredient(name="ingredient-2")
     user.allergies.append(allergy)
     db.session.add(user)
@@ -87,11 +71,7 @@ def _populate_db():
 
 
 def _get_recipe_json(number=1):
-    return {
-        "name": f"extra-recipe-{number}",
-        "description": "Extra description",
-        "instructions": "Extra instructions"
-    }
+    return {"name": f"extra-recipe-{number}", "description": "Extra description", "instructions": "Extra instructions"}
 
 
 class TestRecipeCollection:

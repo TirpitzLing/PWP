@@ -88,4 +88,9 @@ class RecipeNutrition(Resource):
             if ingredient.fat:
                 total_fat += ingredient.fat * ratio
 
-        return {"total_calories": round(total_calories, 2), "total_carbs": round(total_carbs, 2), "total_protein": round(total_protein, 2), "total_fat": round(total_fat, 2)}
+        return {
+            "total_calories": round(total_calories, 2),
+            "total_carbs": round(total_carbs, 2),
+            "total_protein": round(total_protein, 2),
+            "total_fat": round(total_fat, 2),
+        }
