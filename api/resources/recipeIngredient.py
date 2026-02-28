@@ -48,6 +48,11 @@ class RecipeIngredientItem(Resource):
         if not request.json:
             raise UnsupportedMediaType
 
+        try:
+            validate(request.json, RecipeIngredient.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+
         assoc = RecipeIngredient.query.filter_by(recipe_id=recipe.id, ingredient_id=ingredient.id).first()
 
         if not assoc:
