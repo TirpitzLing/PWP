@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from datetime import datetime
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dbms.db"
@@ -50,7 +51,7 @@ class User(db.Model):
     def deserialize(self, doc):
         self.username = doc["username"]
         self.email = doc["email"]
-        self.pwd = doc["pwd"]
+        self.pwd = generate_password_hash(doc["pwd"])
 
         self.created_at = datetime.fromisoformat(doc["created_at"]) if doc.get("created_at") else None
 
