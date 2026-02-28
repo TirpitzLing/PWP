@@ -1,20 +1,30 @@
+from datetime import datetime
 from flask import request, Response
 from flask_restful import Resource
-from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
-from database.dbcreation import Recipe, User
-from api.extensions import db, api, cache
+from werkzeug.exceptions import NotFound
+from database.dbcreation import Recipe, Save
+from api.extensions import db
+
 
 class SaveCollection(Resource):
 
     def get(self, user):
-        return [r.serialize() for r in user.favorites]
+        # list all saved recipes for this user
+        return [s.serialize() for s in user.saved_recipes]
 
     def post(self, user):
+        # save a recipe for the user
         recipe_id = request.json.get("recipe_id")
+        if not recipe_id:
+            return Response(status=400)
+
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        if recipe not in user.favorites:
-            user.favorites.append(recipe)
+        existing = Save.query.filter_by(user_id=user.id, recipe_id=recipe.id).first()
+
+        if not existing:
+            new_save = Save(user_id=user.id, recipe_id=recipe.id, created_at=datetime.utcnow())
+            db.session.add(new_save)
             db.session.commit()
 
         return Response(status=201)
@@ -23,8 +33,10 @@ class SaveCollection(Resource):
 class SaveItem(Resource):
 
     def delete(self, user, recipe):
-        if recipe in user.saved_recipes:
-            user.saved_recipes.remove(recipe)
+        # remove a saved recipe
+        existing = Save.query.filter_by(user_id=user.id, recipe_id=recipe.id).first()
+
+        if existing:
+            db.session.delete(existing)
             db.session.commit()
         return Response(status=204)
-    
