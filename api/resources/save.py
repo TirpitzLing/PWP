@@ -26,8 +26,11 @@ class SaveCollection(Resource):
             new_save = Save(user_id=user.id, recipe_id=recipe.id, created_at=datetime.utcnow())
             db.session.add(new_save)
             db.session.commit()
+            # successfully created
+            return Response(status=201, headers={"Location": api.url_for(SaveItem, user=user, recipe=recipe)})
 
-        return Response(status=201, headers={"Location": api.url_for(SaveItem, user=user, recipe=recipe)})
+        # already exist, return 204
+        return Response(status=204)
 
 
 class SaveItem(Resource):
