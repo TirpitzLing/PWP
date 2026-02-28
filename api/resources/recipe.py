@@ -9,10 +9,14 @@ from database.dbcreation import Recipe
 
 class RecipeCollection(Resource):
 
-    @cache.cached(timeout=None)
+    @cache.cached(timeout=None, query_string=True)
     def get(self):
-        # get all recipes
-        recipes = Recipe.query.all()
+        # get limit and offset from query string
+        limit = request.args.get("limit", 10, type=int)
+        offset = request.args.get("offset", 0, type=int)
+
+        # apply to query
+        recipes = Recipe.query.limit(limit).offset(offset).all()
         return [r.serialize() for r in recipes]
 
     def post(self):
