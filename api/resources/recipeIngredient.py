@@ -1,8 +1,9 @@
 from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
-from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound, Conflict
 from api.extensions import db, api, cache
+from sqlalchemy.exc import IntegrityError
 from database.dbcreation import Ingredient, RecipeIngredient
 
 
@@ -33,8 +34,15 @@ class RecipeIngredientCollection(Resource):
         assoc = RecipeIngredient(recipe=recipe, ingredient=ingredient)
         assoc.deserialize(request.json)
 
-        db.session.add(assoc)
-        db.session.commit()
+        # primary key: (recipe_id, ingredient_id)
+        # adding an existing ingredient to a recipe may cause internal error
+        # catch this and return 409
+        try:
+            db.session.add(assoc)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise Conflict(description="This ingredient has already been added to the recipe")
 
         return Response(
             status=201, headers={"Location": api.url_for(RecipeIngredientItem, recipe=recipe, ingredient=ingredient)}
