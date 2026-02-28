@@ -6,10 +6,11 @@ Handles adding, updating, and removing ingredients within a specific recipe.
 from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
-from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound, Conflict
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound, Conflict, Forbidden
 from api.extensions import db, api, cache
 from sqlalchemy.exc import IntegrityError
 from database.dbcreation import Ingredient, RecipeIngredient
+from api.auth import basic_auth_required
 
 
 class RecipeIngredientCollection(Resource):
@@ -23,12 +24,16 @@ class RecipeIngredientCollection(Resource):
         # list all ingredients for a recipe
         return [i.serialize() for i in recipe.ingredients]
 
+    @basic_auth_required
     def post(self, recipe):
         """
         Add a new ingredient to a specific recipe.
         Invalidates cache upon successful addition.
         """
         # add a new ingredient to the recipe with amount
+        if recipe.created_by != request.current_user.id:
+            raise Forbidden(description="You can only add ingredients to your own recipes.")
+
         if not request.json:
             raise UnsupportedMediaType(description="Request payload must be JSON.")
 
@@ -67,11 +72,15 @@ class RecipeIngredientCollection(Resource):
 class RecipeIngredientItem(Resource):
     """Resource for managing a specific ingredient item within a recipe."""
 
+    @basic_auth_required
     def put(self, recipe, ingredient):
         """
         Update the amount and unit of a specific ingredient in a recipe.
         Invalidates cache upon successful update.
         """
+        if recipe.created_by != request.current_user.id:
+            raise Forbidden(description="You can only update ingredients in your own recipes.")
+
         # update the amount and unit of an ingredient
         if not request.json:
             raise UnsupportedMediaType(description="Request payload must be JSON.")
@@ -91,12 +100,16 @@ class RecipeIngredientItem(Resource):
         cache.clear()
         return Response(status=204)
 
+    @basic_auth_required
     def delete(self, recipe, ingredient):
         """
         Remove a specific ingredient from a recipe.
         Invalidates cache upon successful deletion.
         """
         # remove an ingredient from the recipe
+        if recipe.created_by != request.current_user.id:
+            raise Forbidden(description="You can only delete ingredients from your own recipes.")
+
         assoc = RecipeIngredient.query.filter_by(recipe_id=recipe.id, ingredient_id=ingredient.id).first()
 
         if assoc:

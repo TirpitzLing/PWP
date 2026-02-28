@@ -5,6 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
 from api.extensions import db, api, cache
 from database.dbcreation import Recipe
+from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
+from api.auth import basic_auth_required
 
 
 class RecipeCollection(Resource):
@@ -27,6 +29,7 @@ class RecipeCollection(Resource):
     def post(self):
         """
         Create a new recipe in the system.
+        Requires HTTP Basic Authentication.
         Invalidates cache upon successful creation.
         """
         # create a new recipe
@@ -41,10 +44,14 @@ class RecipeCollection(Resource):
         recipe = Recipe()
         recipe.deserialize(request.json)
 
+        if recipe.created_by != request.current_user.id:
+            raise Forbidden(description="You can only create recipes under your own user ID.")
+
         try:
             db.session.add(recipe)
             db.session.commit()
         except IntegrityError:
+            db.session.rollback()
             raise Conflict(description="Recipe already exists")
 
         cache.clear()
@@ -66,9 +73,13 @@ class RecipeItem(Resource):
     def put(self, recipe):
         """
         Update a specific recipe's details.
+        Requires HTTP Basic Authentication.
         Invalidates cache upon successful update.
         """
         # update a recipe
+        if recipe.created_by != request.current_user.id:
+            raise Forbidden(description="You can only update your own recipes.")
+
         if not request.json:
             raise UnsupportedMediaType(description="Request payload must be JSON.")
 
@@ -87,8 +98,12 @@ class RecipeItem(Resource):
     def delete(self, recipe):
         """
         Delete a specific recipe from the system.
+        Requires HTTP Basic Authentication.
         Invalidates cache upon successful deletion.
         """
+        if recipe.created_by != request.current_user.id:
+            raise Forbidden(description="You can only delete your own recipes.")
+
         # delete a recipe
         db.session.delete(recipe)
         db.session.commit()
