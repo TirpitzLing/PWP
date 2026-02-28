@@ -2,7 +2,7 @@ from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound
-from api.extensions import db, cache
+from api.extensions import db, api, cache
 from database.dbcreation import Ingredient, RecipeIngredient
 
 
@@ -36,7 +36,9 @@ class RecipeIngredientCollection(Resource):
         db.session.add(assoc)
         db.session.commit()
 
-        return Response(status=201)
+        return Response(
+            status=201, headers={"Location": api.url_for(RecipeIngredientItem, recipe=recipe, ingredient=ingredient)}
+        )
 
 
 class RecipeIngredientItem(Resource):

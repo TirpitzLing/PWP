@@ -3,7 +3,7 @@ from flask import request, Response
 from flask_restful import Resource
 from werkzeug.exceptions import NotFound
 from database.dbcreation import Recipe, Save
-from api.extensions import db
+from api.extensions import db, api
 
 
 class SaveCollection(Resource):
@@ -27,7 +27,7 @@ class SaveCollection(Resource):
             db.session.add(new_save)
             db.session.commit()
 
-        return Response(status=201)
+        return Response(status=201, headers={"Location": api.url_for(SaveItem, user=user, recipe=recipe)})
 
 
 class SaveItem(Resource):
