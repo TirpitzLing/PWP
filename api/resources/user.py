@@ -52,7 +52,11 @@ class UserItem(Resource):
         if not request.json:
             raise UnsupportedMediaType
 
-        validate(request.json, User.json_schema())
+        try:
+            validate(request.json, User.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+
         user.deserialize(request.json)
         db.session.commit()
 

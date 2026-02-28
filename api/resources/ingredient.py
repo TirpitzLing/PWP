@@ -45,7 +45,11 @@ class IngredientItem(Resource):
         if not request.json:
             raise UnsupportedMediaType
 
-        validate(request.json, Ingredient.json_schema())
+        try:
+            validate(request.json, Ingredient.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+
         ingredient.deserialize(request.json)
         db.session.commit()
 

@@ -53,7 +53,11 @@ class RecipeItem(Resource):
         if not request.json:
             raise UnsupportedMediaType
 
-        validate(request.json, Recipe.json_schema())
+        try:
+            validate(request.json, Recipe.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+
         recipe.deserialize(request.json)
         db.session.commit()
 
