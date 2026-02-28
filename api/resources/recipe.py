@@ -8,9 +8,14 @@ from database.dbcreation import Recipe
 
 
 class RecipeCollection(Resource):
+    """Resource for managing a collection of recipes."""
 
     @cache.cached(timeout=None, query_string=True)
     def get(self):
+        """
+        Retrieve a paginated list of recipes.
+        Uses limit and offset for pagination.
+        """
         # get limit and offset from query string
         limit = request.args.get("limit", 10, type=int)
         offset = request.args.get("offset", 0, type=int)
@@ -20,9 +25,13 @@ class RecipeCollection(Resource):
         return [r.serialize() for r in recipes]
 
     def post(self):
+        """
+        Create a new recipe in the system.
+        Invalidates cache upon successful creation.
+        """
         # create a new recipe
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(description="Request payload must be JSON")
 
         try:
             validate(request.json, Recipe.json_schema())
@@ -36,22 +45,32 @@ class RecipeCollection(Resource):
             db.session.add(recipe)
             db.session.commit()
         except IntegrityError:
-            raise Conflict(description="recipe already exists")
+            raise Conflict(description="Recipe already exists")
+
+        cache.clear()
 
         return Response(status=201, headers={"Location": api.url_for(RecipeItem, recipe=recipe)})
 
 
 class RecipeItem(Resource):
+    """Resource for managing a specific recipe item."""
 
     @cache.cached(timeout=None)
     def get(self, recipe):
+        """
+        Retrieve details of a specific recipe.
+        """
         # get details of a specific recipe
         return recipe.serialize()
 
     def put(self, recipe):
+        """
+        Update a specific recipe's details.
+        Invalidates cache upon successful update.
+        """
         # update a recipe
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(description="Request payload must be JSON.")
 
         try:
             validate(request.json, Recipe.json_schema())
@@ -61,19 +80,30 @@ class RecipeItem(Resource):
         recipe.deserialize(request.json)
         db.session.commit()
 
+        cache.clear()
+
         return Response(status=204)
 
     def delete(self, recipe):
+        """
+        Delete a specific recipe from the system.
+        Invalidates cache upon successful deletion.
+        """
         # delete a recipe
         db.session.delete(recipe)
         db.session.commit()
+        cache.clear()
         return Response(status=204)
 
 
 class RecipeNutrition(Resource):
+    """Resource for calculating the nutritional value of a recipe."""
 
     @cache.cached(timeout=None)
     def get(self, recipe):
+        """
+        Calculate total nutrition based on the ingredients associated with the recipe.
+        """
         # calculate total nutrition based on ingredients
         total_calories = 0.0
         total_carbs = 0.0
