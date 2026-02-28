@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import request, Response
 from flask_restful import Resource
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import BadRequest
 from database.dbcreation import Recipe, Save
 from api.extensions import db, api
 
@@ -16,7 +16,7 @@ class SaveCollection(Resource):
         # save a recipe for the user
         recipe_id = request.json.get("recipe_id")
         if not recipe_id:
-            return Response(status=400)
+            raise BadRequest(description="missing recipe_id")
 
         recipe = Recipe.query.get_or_404(recipe_id)
 
