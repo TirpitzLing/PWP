@@ -47,7 +47,9 @@ class UserCollection(Resource):
             raise BadRequest(description=str(e))
 
         user = User()
-        user.deserialize(request.json)
+        # get plain api key, first time register, generate a key and response with the key
+        # otherwise, return None
+        raw_api_key = user.deserialize(request.json)
 
         # set creation time if not provided
         if not user.created_at:
@@ -60,7 +62,7 @@ class UserCollection(Resource):
             raise Conflict(description="Username or email already exists")
 
         response_data = user.serialize()
-        response_data["api_key"] = user.api_key  # return api_key only when registered
+        response_data["api_key"] = raw_api_key  # return api_key only when registered
 
         return Response(
             json.dumps(response_data),

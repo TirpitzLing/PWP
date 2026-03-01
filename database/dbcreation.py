@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash
 import secrets
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+import hashlib
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dbms.db"
@@ -54,6 +55,11 @@ class User(db.Model):
             # "api_key": self.api_key, # deleted for security
         }
 
+    @staticmethod
+    def hash_key(token):
+        """hashing api key"""
+        return hashlib.sha256(token.encode()).hexdigest()
+
     def deserialize(self, doc):
         # mandatory
         self.username = doc["username"]
@@ -67,9 +73,12 @@ class User(db.Model):
         # optional
         self.allergies = doc.get("allergies")
 
-        # generate api_key
+        # generate api_key, store hash but return plain
         if not self.api_key:
-            self.api_key = secrets.token_hex(32)
+            raw_token = secrets.token_hex(32)
+            self.api_key = self.hash_key(raw_token)
+            return raw_token  # return plaintext just to response
+        return None
 
     @staticmethod
     def json_schema():

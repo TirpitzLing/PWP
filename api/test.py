@@ -52,7 +52,7 @@ def _populate_db():
         email="test@example.com",
         created_at=datetime.now(),
         allergies="ingredient-2",
-        api_key=TEST_KEY,
+        api_key=User.hash_key(TEST_KEY),
     )
     db.session.add(user)
     db.session.commit()

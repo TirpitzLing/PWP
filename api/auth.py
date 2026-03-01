@@ -18,13 +18,14 @@ def api_key_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         # get api_key from request headers
-        api_key = request.headers.get("dbms-api-key")
-
-        if not api_key:
+        api_key_raw = request.headers.get("dbms-api-key")
+        if not api_key_raw:
             raise Unauthorized(description="Authentication required. Please provide a valid dbms-api-key header.")
 
+        # match api ket after hashing
+        hashed_key = User.hash_key(api_key_raw)
         # search for the user with the api key
-        user = User.query.filter_by(api_key=api_key).first()
+        user = User.query.filter_by(api_key=hashed_key).first()
 
         if not user:
             raise Unauthorized(description="Invalid API key.")
