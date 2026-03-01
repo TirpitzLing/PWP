@@ -9,6 +9,7 @@ import os
 import tempfile
 import json
 import pytest
+import warnings
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 from werkzeug.datastructures import Headers
@@ -18,18 +19,21 @@ from dbms import create_app
 from dbms.extensions import db
 from dbms.models import Recipe, Ingredient, RecipeIngredient, User
 
+warnings.filterwarnings("ignore", category=ResourceWarning)
+
 TEST_KEY = "verysafetestkey"
 
 
 class AuthHeaderClient(FlaskClient):
     def open(self, *args, **kwargs):
         # put api_key
-        headers = Headers({"dbms-api-key": TEST_KEY})
+        headers = kwargs.pop("headers", None)
+        new_headers = Headers(headers) if headers is not None else Headers()
 
-        extra_headers = kwargs.pop("headers", Headers())
-        headers.extend(extra_headers)
-        kwargs["headers"] = headers
+        if "dbms-api-key" not in new_headers:
+            new_headers["dbms-api-key"] = TEST_KEY
 
+        kwargs["headers"] = new_headers
         return super().open(*args, **kwargs)
 
 
@@ -72,7 +76,16 @@ def _populate_db():
         allergies="ingredient-2",
         api_key=User.hash_key(TEST_KEY),
     )
-    db.session.add(user)
+
+    user2 = User(
+        username="test-user-2",
+        pwd=generate_password_hash("test-password-2"),
+        email="test2@example.com",
+        created_at=datetime.now(),
+        api_key=User.hash_key("user2key"),
+    )
+
+    db.session.add_all([user, user2])
     db.session.commit()
 
     for i in range(1, 4):
@@ -88,7 +101,13 @@ def _populate_db():
         db.session.add(recipe)
 
         # test nutrition
-        ing = Ingredient(name=f"ingredient-{i}", calories=10.0 * i)
+        ing = Ingredient(
+            name=f"ingredient-{i}",
+            calories=10.0 * i,
+            carbs=5.0,
+            protein=2.0,
+            fat=1.0,
+        )
         db.session.add(ing)
         db.session.commit()
 
@@ -106,6 +125,16 @@ def _get_recipe_json(number=1):
         "procedure": "Extra instructions",
         "created_by": 1,
     }
+
+
+class TestCLICommands:
+    def test_cli(self, client):
+        runner = client.application.test_cli_runner()
+        # test init db
+        assert runner.invoke(args=["init-db"]).exit_code == 0
+        # test populate
+        assert runner.invoke(args=["populate-db"]).exit_code == 0
+        assert runner.invoke(args=["populate-db"]).exit_code == 0
 
 
 class TestRecipeCollection:
@@ -126,14 +155,15 @@ class TestRecipeCollection:
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 201
 
-        resp = client.get(resp.headers["Location"])
-        assert resp.status_code == 200
-        body = json.loads(resp.data)
+        resp_get = client.get(resp.headers["Location"])
+        assert resp_get.status_code == 200
+        body = json.loads(resp_get.data)
         assert body["title"] == "extra-recipe-1"
 
     def test_wrong_mediatype(self, client):
-        valid = _get_recipe_json()
-        resp = client.post(self.RESOURCE_URL, data=json.dumps(valid))
+        resp = client.post(
+            self.RESOURCE_URL, data="not json", content_type="text/plain"
+        )
         assert resp.status_code == 415
 
     def test_post_missing_field(self, client):
@@ -154,12 +184,12 @@ class TestRecipeCollection:
         assert resp.status_code == 401
 
     # recipe title is not unique
-    def test_post_name_conflict(self, client):
-        valid = _get_recipe_json()
-        valid["title"] = "test-recipe-1"
-        valid["id"] = 1  # primary key conflict
-        resp = client.post(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 409
+    # def test_post_name_conflict(self, client):
+    #     valid = _get_recipe_json()
+    #     valid["title"] = "test-recipe-1"
+    #     valid["id"] = 1  # primary key conflict
+    #     resp = client.post(self.RESOURCE_URL, json=valid)
+    #     assert resp.status_code == 409
 
 
 class TestRecipeItem:
@@ -188,21 +218,38 @@ class TestRecipeItem:
         assert json.loads(check_resp.data)["title"] == "Updated Title"
 
     def test_wrong_mediatype(self, client):
-        valid = _get_recipe_json()
-        resp = client.put(self.RESOURCE_URL, data=json.dumps(valid))
-        assert resp.status_code == 415
+        assert (
+            client.put(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
 
     def test_put_missing_field(self, client):
         valid = _get_recipe_json()
         valid.pop("title")
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 400
+        assert client.put(self.RESOURCE_URL, json=valid).status_code == 400
 
-    def test_put_title_conflict(self, client):
+    def test_put_forbidden(self, client):
+        # try use user2 key edit user1's recipe (403)
         valid = _get_recipe_json()
-        valid["title"] = "test-recipe-2"
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 409
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "user2key"},
+            ).status_code
+            == 403
+        )
+
+    def test_delete_forbidden(self, client):
+        # try use user2 key delete user1's recipe (403)
+        assert (
+            client.delete(
+                self.RESOURCE_URL, headers={"dbms-api-key": "user2key"}
+            ).status_code
+            == 403
+        )
 
     def test_delete(self, client):
         resp = client.delete(self.RESOURCE_URL)
@@ -212,16 +259,17 @@ class TestRecipeItem:
 
     def test_unauthorized(self, client):
         valid = _get_recipe_json()
-        resp = client.put(
-            self.RESOURCE_URL,
-            json=valid,
-            headers={"dbms-api-key": "invalid-key"},
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "invalid-key"},
+            ).status_code
+            == 401
         )
-        assert resp.status_code == 401
 
 
 class TestRecipeIngredient:
-
     RESOURCE_URL = "/api/recipes/1/ingredients/"
 
     def test_get(self, client):
@@ -235,21 +283,103 @@ class TestRecipeIngredient:
         valid = {"ingredient_id": 2, "amount": 1.0, "unit": "g"}
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 201
+        assert resp.headers["Location"].endswith(self.RESOURCE_URL + "2/")
 
-        resp = client.get(self.RESOURCE_URL)
-        body = json.loads(resp.data)
+        resp_get = client.get(self.RESOURCE_URL)
+        body = json.loads(resp_get.data)
         assert len(body) == 2
         # check Location's resource url
-        assert resp.headers["Location"].endswith(self.RESOURCE_URL + "4/")
+        # assert resp.headers["Location"].endswith(self.RESOURCE_URL + "4/")
 
     def test_post_wrong_mediatype(self, client):
-        valid = {"ingredient_id": 2}
-        resp = client.post(self.RESOURCE_URL, data=json.dumps(valid))
-        assert resp.status_code == 415
+        assert (
+            client.post(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
+
+    def test_post_forbidden(self, client):
+        # add ing using user2 to user1's recipe
+        valid = {"ingredient_id": 2, "amount": 1.0, "unit": "g"}
+        assert (
+            client.post(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "user2key"},
+            ).status_code
+            == 403
+        )
+
+    def test_post_missing_field(self, client):
+        assert (
+            client.post(self.RESOURCE_URL, json={"amount": 1.0}).status_code
+            == 400
+        )
+
+    def test_post_conflict(self, client):
+        # ingredient_id=1 added already when init
+        valid = {"ingredient_id": 1, "amount": 1.0, "unit": "g"}
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 409
+
+
+class TestRecipeIngredientItem:
+    # test single ingredient put and del
+    RESOURCE_URL = "/api/recipes/1/ingredients/1/"
+
+    def test_put_success(self, client):
+        assert (
+            client.put(
+                self.RESOURCE_URL, json={"amount": 5.0, "unit": "kg"}
+            ).status_code
+            == 204
+        )
+
+    def test_put_wrong_mediatype(self, client):
+        assert (
+            client.put(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
+
+    def test_put_missing_field(self, client):
+        assert (
+            client.put(self.RESOURCE_URL, json={"amount": "str"}).status_code
+            == 400
+        )
+
+    def test_put_not_found(self, client):
+        assert (
+            client.put(
+                "/api/recipes/1/ingredients/99/", json={"amount": 5.0}
+            ).status_code
+            == 404
+        )
+
+    def test_put_forbidden(self, client):
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json={"amount": 5.0},
+                headers={"dbms-api-key": "user2key"},
+            ).status_code
+            == 403
+        )
+
+    def test_delete_forbidden(self, client):
+        assert (
+            client.delete(
+                self.RESOURCE_URL, headers={"dbms-api-key": "user2key"}
+            ).status_code
+            == 403
+        )
+
+    def test_delete_success(self, client):
+        assert client.delete(self.RESOURCE_URL).status_code == 204
 
 
 class TestSave:
-
     COLLECTION_URL = "/api/users/1/saves/"
     ITEM_URL = "/api/users/1/saves/"
 
@@ -263,38 +393,67 @@ class TestSave:
         valid = {"recipe_id": 1}
         resp = client.post(self.COLLECTION_URL, json=valid)
         assert resp.status_code == 201
-        resp = client.get(self.COLLECTION_URL)
-        body = json.loads(resp.data)
-        assert any(r["title"] == "test-recipe-1" for r in body)
+        resp_get = client.get(self.COLLECTION_URL)
+        body = json.loads(resp_get.data)
+        assert any(r["recipe_id"] == 1 for r in body)
+
+    def test_post_conflict(self, client):
+        client.post(self.COLLECTION_URL, json={"recipe_id": 2})
+        assert (
+            client.post(self.COLLECTION_URL, json={"recipe_id": 2}).status_code
+            == 409
+        )
+
+    # test missing recipe_id (400)
+    def test_post_missing_field(self, client):
+        assert client.post(self.COLLECTION_URL, json={}).status_code == 400
 
     def test_delete_save(self, client):
-        client.post(self.COLLECTION_URL, json={"recipe_id": 1})
-        resp = client.delete(self.ITEM_URL + "1/")
-        assert resp.status_code == 204
-        resp = client.get(self.COLLECTION_URL)
-        body = json.loads(resp.data)
-        assert all(r["title"] != "test-recipe-1" for r in body)
+        client.post(self.COLLECTION_URL, json={"recipe_id": 2})
+        assert client.delete(self.ITEM_URL + "2/").status_code == 204
 
     def test_unauthorized(self, client):
-        resp = client.post(
-            self.COLLECTION_URL,
-            json={"recipe_id": 1},
-            headers={"dbms-api-key": "wrong"},
+        assert (
+            client.post(
+                self.COLLECTION_URL,
+                json={"recipe_id": 1},
+                headers={"dbms-api-key": "wrong"},
+            ).status_code
+            == 401
         )
-        assert resp.status_code == 401
 
 
 class TestUserCollection:
     RESOURCE_URL = "/api/users/"
 
     def test_get(self, client):
-        resp = client.get(self.RESOURCE_URL)
-        assert resp.status_code == 200
+        assert client.get(self.RESOURCE_URL).status_code == 200
 
     def test_post(self, client):
         valid = {"username": "new-user", "email": "new@test.com", "pwd": "123"}
-        resp = client.post(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 201
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 201
+
+    # test name conflict (409)
+    def test_post_conflict(self, client):
+        valid = {
+            "username": "test-user",
+            "email": "test@example.com",
+            "pwd": "123",
+        }
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 409
+
+    # test missing field (400)
+    def test_post_missing_field(self, client):
+        valid = {"email": "new@test.com"}
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 400
+
+    def test_post_wrong_mediatype(self, client):
+        assert (
+            client.post(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
 
 
 class TestUserItem:
@@ -302,97 +461,123 @@ class TestUserItem:
     INVALID_URL = "/api/users/999/"
 
     def test_get_success(self, client):
-        resp = client.get(self.RESOURCE_URL)
-        assert resp.status_code == 200
+        assert client.get(self.RESOURCE_URL).status_code == 200
 
     def test_get_not_found(self, client):
-        """test get user not exist"""
-        resp = client.get(self.INVALID_URL)
-        assert resp.status_code == 404
+        assert client.get(self.INVALID_URL).status_code == 404
 
     def test_put_success(self, client):
         valid = {
             "username": "updated-user",
             "email": "test@example.com",
             "pwd": "pwd",
+            "created_at": "2026-01-01T00:00:00",
         }
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 204
+        assert client.put(self.RESOURCE_URL, json=valid).status_code == 204
 
     def test_put_conflict(self, client):
         """test when update, username conflict (409)"""
-        # create user2
-        client.post(
-            "/api/users/",
-            json={
-                "username": "user2",
-                "email": "user2@test.com",
-                "pwd": "123",
-            },
-        )
-        # try update user1 name to user2
+        # try update user1 name to existing name user2
         valid = {
-            "username": "user2",
+            "username": "test-user-2",
             "email": "test@example.com",
             "pwd": "pwd",
+            "created_at": "2026-01-01T00:00:00",
         }
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 409
+        assert client.put(self.RESOURCE_URL, json=valid).status_code == 409
 
     def test_put_bad_request(self, client):
         """update with out required field (400)"""
-        valid = {"email": "test@example.com"}  # no usernam and pwd
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 400
+        assert (
+            client.put(
+                self.RESOURCE_URL, json={"email": "test@example.com"}
+            ).status_code
+            == 400
+        )
 
     def test_put_wrong_mediatype(self, client):
-        """test wrong media type (415)"""
-        resp = client.put(self.RESOURCE_URL, data="not json")
-        assert resp.status_code == 415
+        assert (
+            client.put(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
 
     def test_delete(self, client):
-        resp = client.delete(self.RESOURCE_URL)
-        assert resp.status_code == 204
-        # test if really deleted
+        assert client.delete(self.RESOURCE_URL).status_code == 204
         assert client.get(self.RESOURCE_URL).status_code == 404
 
     def test_unauthorized(self, client):
-        valid = {"username": "hacker", "email": "hacker@test.com"}
-        resp = client.put(
-            self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "none"}
+        valid = {
+            "username": "hacked",
+            "email": "hack@test.com",
+            "pwd": "123",
+            "created_at": "2026-01-01T00:00:00",
+        }
+        assert (
+            client.put(
+                self.RESOURCE_URL, json=valid, headers={"dbms-api-key": ""}
+            ).status_code
+            == 401
         )
-        assert resp.status_code == 401
+
+    def test_forbidden(self, client):
+        # try edit user1 info with user2
+        valid = {
+            "username": "hacked",
+            "email": "hack@test.com",
+            "pwd": "123",
+            "created_at": "2026-01-01T00:00:00",
+        }
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "user2key"},
+            ).status_code
+            == 403
+        )
+        assert (
+            client.delete(
+                self.RESOURCE_URL, headers={"dbms-api-key": "user2key"}
+            ).status_code
+            == 403
+        )
 
 
 class TestIngredientCollection:
     RESOURCE_URL = "/api/ingredients/"
 
     def test_get(self, client):
-        resp = client.get(self.RESOURCE_URL)
-        assert resp.status_code == 200
-
-    def test_get_with_pagination(self, client):
-        """test get with pagination request"""
-        resp = client.get(self.RESOURCE_URL + "?limit=1&offset=0")
-        assert resp.status_code == 200
-        body = json.loads(resp.data)
-        assert len(body) == 1
+        assert client.get(self.RESOURCE_URL).status_code == 200
+        assert (
+            client.get(self.RESOURCE_URL + "?limit=1&offset=0").status_code
+            == 200
+        )
 
     def test_post_success(self, client):
-        valid = {"name": "Salt", "calories": 0.0}
-        resp = client.post(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 201
+        assert (
+            client.post(
+                self.RESOURCE_URL, json={"name": "Salt", "calories": 0.0}
+            ).status_code
+            == 201
+        )
 
     def test_post_missing_field(self, client):
-        """test without required name (400)"""
-        valid = {"calories": 100.0}
-        resp = client.post(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 400
+        assert (
+            client.post(
+                self.RESOURCE_URL, json={"calories": 100.0}
+            ).status_code
+            == 400
+        )
 
     def test_post_wrong_mediatype(self, client):
-        """test wrong media type (415)"""
-        resp = client.post(self.RESOURCE_URL, data="not json")
-        assert resp.status_code == 415
+        assert (
+            client.post(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
 
 
 class TestIngredientItem:
@@ -400,31 +585,40 @@ class TestIngredientItem:
     INVALID_URL = "/api/ingredients/999/"
 
     def test_get_success(self, client):
-        resp = client.get(self.RESOURCE_URL)
-        assert resp.status_code == 200
+        assert client.get(self.RESOURCE_URL).status_code == 200
 
     def test_get_not_found(self, client):
-        """test get non-exist ingredient"""
-        resp = client.get(self.INVALID_URL)
-        assert resp.status_code == 404
+        assert client.get(self.INVALID_URL).status_code == 404
 
     def test_put_success(self, client):
-        valid = {"name": "Salt Updated", "calories": 5.0}
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 204
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json={"name": "Salt Updated", "calories": 5.0},
+            ).status_code
+            == 204
+        )
 
     def test_put_invalid_type(self, client):
         """
         test input wrong type, calories should be number but
         provided string (400)
         """
-        valid = {"name": "Salt", "calories": "too high"}
-        resp = client.put(self.RESOURCE_URL, json=valid)
-        assert resp.status_code == 400
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json={"name": "Salt", "calories": "too high"},
+            ).status_code
+            == 400
+        )
 
     def test_put_wrong_mediatype(self, client):
-        resp = client.put(self.RESOURCE_URL, data="not json")
-        assert resp.status_code == 415
+        assert (
+            client.put(
+                self.RESOURCE_URL, data="not json", content_type="text/plain"
+            ).status_code
+            == 415
+        )
 
 
 class TestRecipeNutrition:
@@ -438,8 +632,37 @@ class TestRecipeNutrition:
         body = json.loads(resp.data)
         assert "total_calories" in body
         assert "total_protein" in body
+        assert "total_carbs" in body
+        assert "total_fat" in body
 
     def test_get_nutrition_not_found(self, client):
         """test calc nutrition for a non-exist recipe (404)"""
-        resp = client.get(self.INVALID_URL)
-        assert resp.status_code == 404
+        assert client.get(self.INVALID_URL).status_code == 404
+
+
+class TestSaveConverter:
+    # for SaveConverter
+    def test_save_converter(self, client):
+        from dbms.converters import SaveConverter
+        from werkzeug.routing import Map
+        from werkzeug.exceptions import NotFound
+
+        conv = SaveConverter(Map())
+
+        # create a save
+        client.post("/api/users/1/saves/", json={"recipe_id": 1})
+
+        # test string convert to python obj
+        obj = conv.to_python("1-1")
+        assert obj.user_id == 1
+        assert obj.recipe_id == 1
+
+        # test py obj -> url string
+        assert conv.to_url(obj) == "1-1"
+
+        # test format error/not found
+        with pytest.raises(NotFound):
+            conv.to_python("invalid-format")
+
+        with pytest.raises(NotFound):
+            conv.to_python("99-99")

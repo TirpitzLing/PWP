@@ -18,3 +18,6 @@ dependencies = [
 
 [tool.black]
 line-length = 79
+
+[tool.setuptools]
+packages = ["dbms"]

@@ -1,9 +1,10 @@
 from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
-from sqlalchemy.exc import IntegrityError
+
+# from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import (
-    Conflict,
+    # Conflict,
     BadRequest,
     UnsupportedMediaType,
     Forbidden,
@@ -62,12 +63,9 @@ class RecipeCollection(Resource):
         if not recipe.created_at:
             recipe.created_at = datetime.now(timezone.utc)
 
-        try:
-            db.session.add(recipe)
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            raise Conflict(description="Recipe already exists")
+        # title do not have unique limit
+        db.session.add(recipe)
+        db.session.commit()
 
         cache.clear()
 

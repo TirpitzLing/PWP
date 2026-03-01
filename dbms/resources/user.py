@@ -118,7 +118,11 @@ class UserItem(Resource):
             raise BadRequest(description=str(e))
 
         user.deserialize(request.json)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise Conflict(description="Username or email already exists")
 
         return Response(status=204)
 

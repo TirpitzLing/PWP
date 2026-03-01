@@ -67,6 +67,7 @@ def create_app(test_config=None):
 
     # CLI cmd
     app.cli.add_command(models.init_db_command)
+    app.cli.add_command(models.populate_db_command)
 
     # register blueprint
     from dbms.api import api_bp
