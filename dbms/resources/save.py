@@ -8,8 +8,8 @@ from flask import request, Response
 from flask_restful import Resource
 from werkzeug.exceptions import BadRequest, Conflict, Forbidden
 from database.dbcreation import Recipe, Save
-from api.extensions import db, api
-from api.auth import api_key_required
+from dbms.extensions import db, api
+from dbms.auth import api_key_required
 
 
 class SaveCollection(Resource):

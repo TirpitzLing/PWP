@@ -8,10 +8,10 @@ from werkzeug.exceptions import (
     UnsupportedMediaType,
     Forbidden,
 )
-from api.extensions import db, api, cache
+from dbms.extensions import db, api, cache
 from database.dbcreation import Recipe
 
-from api.auth import api_key_required
+from dbms.auth import api_key_required
 from datetime import datetime, timezone
 
 

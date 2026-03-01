@@ -1,12 +1,12 @@
 import os
-from api.resources.recipeIngredient import (
+from dbms.resources.recipeIngredient import (
     RecipeIngredientCollection,
     RecipeIngredientItem,
 )
-from api.resources.save import SaveCollection, SaveItem
-from api.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
-from api.resources.ingredient import IngredientCollection, IngredientItem
-from api.resources.user import UserCollection, UserItem, UserRecipeCollection
+from dbms.resources.save import SaveCollection, SaveItem
+from dbms.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
+from dbms.resources.ingredient import IngredientCollection, IngredientItem
+from dbms.resources.user import UserCollection, UserItem, UserRecipeCollection
 from database.dbcreation import (
     User,
     Ingredient,
@@ -21,7 +21,7 @@ from werkzeug.exceptions import (
     NotFound,
     HTTPException,
 )
-from extensions import db, api, cache
+from dbms.extensions import db, api, cache
 from flask_swagger_ui import get_swaggerui_blueprint
 
 

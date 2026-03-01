@@ -10,8 +10,8 @@ import json
 import pytest
 from werkzeug.security import generate_password_hash
 
-from api.app import app
-from api.extensions import db
+from dbms.app import app
+from dbms.extensions import db
 from database.dbcreation import (
     Recipe,
     Ingredient,

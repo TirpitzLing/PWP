@@ -15,9 +15,9 @@ from werkzeug.exceptions import (
     UnsupportedMediaType,
     Forbidden,
 )
-from api.extensions import db, api
+from dbms.extensions import db, api
 from database.dbcreation import User
-from api.auth import api_key_required
+from dbms.auth import api_key_required
 import json
 
 

@@ -7,7 +7,7 @@ from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
-from api.extensions import db, api, cache
+from dbms.extensions import db, api, cache
 from database.dbcreation import Ingredient
 
 

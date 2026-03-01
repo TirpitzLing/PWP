@@ -13,10 +13,10 @@ from werkzeug.exceptions import (
     Conflict,
     Forbidden,
 )
-from api.extensions import db, api, cache
+from dbms.extensions import db, api, cache
 from sqlalchemy.exc import IntegrityError
 from database.dbcreation import Ingredient, RecipeIngredient
-from api.auth import api_key_required
+from dbms.auth import api_key_required
 
 
 class RecipeIngredientCollection(Resource):
