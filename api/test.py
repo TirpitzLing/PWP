@@ -137,12 +137,12 @@ class TestRecipeCollection:
         assert resp.status_code == 401
 
     # recipe title is not unique
-    # def test_post_name_conflict(self, client):
-    #     valid = _get_recipe_json()
-    #     valid["title"] = "test-recipe-1"
-    #     valid["id"] = 1 # primary key conflict
-    #     resp = client.post(self.RESOURCE_URL, json=valid)
-    #     assert resp.status_code == 409
+    def test_post_name_conflict(self, client):
+        valid = _get_recipe_json()
+        valid["title"] = "test-recipe-1"
+        valid["id"] = 1  # primary key conflict
+        resp = client.post(self.RESOURCE_URL, json=valid)
+        assert resp.status_code == 409
 
 
 class TestRecipeItem:
@@ -162,8 +162,13 @@ class TestRecipeItem:
 
     def test_put_valid_request(self, client):
         valid = _get_recipe_json()
+        valid["title"] = "Updated Title"
         resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 204
+
+        # check if the update is actually successful
+        check_resp = client.get(self.RESOURCE_URL)
+        assert json.loads(check_resp.data)["title"] == "Updated Title"
 
     def test_wrong_mediatype(self, client):
         valid = _get_recipe_json()
@@ -213,6 +218,8 @@ class TestRecipeIngredient:
         resp = client.get(self.RESOURCE_URL)
         body = json.loads(resp.data)
         assert len(body) == 2
+        # check Location's resource url
+        assert resp.headers["Location"].endswith(self.RESOURCE_URL + "4/")
 
     def test_post_wrong_mediatype(self, client):
         valid = {"ingredient_id": 2}
