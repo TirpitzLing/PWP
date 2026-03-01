@@ -3,7 +3,7 @@ API resources for managing users.
 Handles user registration, profile updates, account deletion, and fetching user recipes.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
@@ -53,7 +53,7 @@ class UserCollection(Resource):
 
         # set creation time if not provided
         if not user.created_at:
-            user.created_at = datetime.utcnow()
+            user.created_at = datetime.now(timezone.utc)
 
         try:
             db.session.add(user)

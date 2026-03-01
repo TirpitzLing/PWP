@@ -125,7 +125,7 @@ class TestRecipeCollection:
 
     def test_post_missing_field(self, client):
         valid = _get_recipe_json()  # valid data
-        valid.pop("procedure")  # delete procedure field to test
+        valid.pop("title")  # delete title(mandatory) field to test
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 400
 

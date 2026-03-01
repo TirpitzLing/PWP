@@ -7,6 +7,7 @@ from api.extensions import db, api, cache
 from database.dbcreation import Recipe
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
 from api.auth import api_key_required
+from datetime import datetime, timezone
 
 
 class RecipeCollection(Resource):
@@ -46,9 +47,12 @@ class RecipeCollection(Resource):
         recipe = Recipe()
         recipe.deserialize(request.json)
 
-        # front-end's concern
-        if recipe.created_by != request.current_user.id:
-            raise Forbidden(description="You can only create recipes under your own user ID.")
+        # automatically link to the current user
+        recipe.created_by = request.current_user.id
+
+        # automatically set created_at
+        if not recipe.created_at:
+            recipe.created_at = datetime.now(timezone.utc)
 
         try:
             db.session.add(recipe)

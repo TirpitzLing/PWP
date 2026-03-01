@@ -3,7 +3,7 @@ API resources for managing saved recipes.
 Handles bookmarking recipes for users and removing them from saved collections.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import request, Response
 from flask_restful import Resource
 from werkzeug.exceptions import BadRequest, Conflict, Forbidden
@@ -46,7 +46,7 @@ class SaveCollection(Resource):
         if existing:
             raise Conflict(description="Recipe already saved by this user")
 
-        new_save = Save(user_id=user.id, recipe_id=recipe.id, created_at=datetime.utcnow())
+        new_save = Save(user_id=user.id, recipe_id=recipe.id, created_at=datetime.now(timezone.utc))
         db.session.add(new_save)
         db.session.commit()
 
