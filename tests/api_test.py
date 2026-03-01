@@ -10,7 +10,7 @@ import json
 import pytest
 from werkzeug.security import generate_password_hash
 
-from dbms.app import app
+from dbms import app
 from dbms.extensions import db
 from dbms.models import (
     Recipe,
