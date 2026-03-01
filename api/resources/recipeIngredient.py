@@ -10,7 +10,7 @@ from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound, Conf
 from api.extensions import db, api, cache
 from sqlalchemy.exc import IntegrityError
 from database.dbcreation import Ingredient, RecipeIngredient
-from api.auth import basic_auth_required
+from api.auth import api_key_required
 
 
 class RecipeIngredientCollection(Resource):
@@ -24,7 +24,7 @@ class RecipeIngredientCollection(Resource):
         # list all ingredients for a recipe
         return [i.serialize() for i in recipe.ingredients]
 
-    @basic_auth_required
+    @api_key_required
     def post(self, recipe):
         """
         Add a new ingredient to a specific recipe.
@@ -72,7 +72,7 @@ class RecipeIngredientCollection(Resource):
 class RecipeIngredientItem(Resource):
     """Resource for managing a specific ingredient item within a recipe."""
 
-    @basic_auth_required
+    @api_key_required
     def put(self, recipe, ingredient):
         """
         Update the amount and unit of a specific ingredient in a recipe.
@@ -100,7 +100,7 @@ class RecipeIngredientItem(Resource):
         cache.clear()
         return Response(status=204)
 
-    @basic_auth_required
+    @api_key_required
     def delete(self, recipe, ingredient):
         """
         Remove a specific ingredient from a recipe.

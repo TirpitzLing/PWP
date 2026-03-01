@@ -6,33 +6,30 @@ Provides decorators to secure API endpoints using HTTP Basic Auth.
 from functools import wraps
 from flask import request
 from werkzeug.exceptions import Unauthorized
-from werkzeug.security import check_password_hash
 from database.dbcreation import User
 
 
-def basic_auth_required(f):
+def api_key_required(f):
     """
-    Decorator to require HTTP Basic Authentication for an API endpoint.
-    Checks the 'Authorization' header and verifies credentials against the database.
+    Decorator to require API Key Authentication for an API endpoint.
+    Checks the 'dbms-api-key' header and verifies credentials against the database.
     """
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Extract authorization data from the request header
-        auth = request.authorization
+        # get api_key from request headers
+        api_key = request.headers.get("dbms-api-key")
 
-        # Check if auth details are provided
-        if not auth or not auth.username or not auth.password:
-            raise Unauthorized(description="Authentication required. Please provide valid username and password.")
+        if not api_key:
+            raise Unauthorized(description="Authentication required. Please provide a valid dbms-api-key header.")
 
-        # Verify user exists in the database
-        user = User.query.filter_by(username=auth.username).first()
+        # search for the user with the api key
+        user = User.query.filter_by(api_key=api_key).first()
 
-        # Check if user exists and password is correct
-        if not user or not check_password_hash(user.pwd, auth.password):
-            raise Unauthorized(description="Invalid username or password.")
+        if not user:
+            raise Unauthorized(description="Invalid API key.")
 
-        # Inject the authenticated user into the request context
+        # inject the authenticated user into the request context
         request.current_user = user
 
         return f(*args, **kwargs)

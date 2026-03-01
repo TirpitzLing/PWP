@@ -6,7 +6,7 @@ from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
 from api.extensions import db, api, cache
 from database.dbcreation import Recipe
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
-from api.auth import basic_auth_required
+from api.auth import api_key_required
 
 
 class RecipeCollection(Resource):

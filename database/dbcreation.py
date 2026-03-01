@@ -3,6 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from datetime import datetime
 from werkzeug.security import generate_password_hash
+import secrets
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dbms.db"
@@ -39,6 +42,8 @@ class User(db.Model):
     # ingredient_preferences = db.relationship("UserIngredientPreference", back_populates="user")
     # allergies = db.relationship("UserAllergy", back_populates="user")
 
+    api_key = db.Column(db.String(128), unique=True, nullable=False)
+
     def serialize(self):
         return {
             "id": self.id,
@@ -46,6 +51,7 @@ class User(db.Model):
             "email": self.email,
             "created_at": self.created_at.isoformat(),
             "allergies": self.allergies,
+            "api_key": self.api_key,
         }
 
     def deserialize(self, doc):
@@ -60,6 +66,10 @@ class User(db.Model):
 
         # optional
         self.allergies = doc.get("allergies")
+
+        # generate api_key
+        if not self.api_key:
+            self.api_key = secrets.token_hex(32)
 
     @staticmethod
     def json_schema():
