@@ -18,6 +18,8 @@ from database.dbcreation import Recipe, Ingredient, RecipeIngredient, User, Save
 from flask.testing import FlaskClient
 from werkzeug.datastructures import Headers
 
+TEST_KEY = "verysafetestkey"
+
 
 @pytest.fixture
 def client():
@@ -50,6 +52,7 @@ def _populate_db():
         email="test@example.com",
         created_at=datetime.now(),
         allergies="ingredient-2",
+        api_key=TEST_KEY,
     )
     db.session.add(user)
     db.session.commit()
@@ -79,13 +82,9 @@ def _populate_db():
 
 class AuthHeaderClient(FlaskClient):
     def open(self, *args, **kwargs):
-        # generate header for basic auth
-        credentials = "test-user:test-password"
-        token = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+        # put api_key
+        headers = Headers({"dbms-api-key": TEST_KEY})
 
-        headers = Headers({"Authorization": f"Basic {token}"})
-
-        # if the test has a header
         extra_headers = kwargs.pop("headers", Headers())
         headers.extend(extra_headers)
         kwargs["headers"] = headers
