@@ -67,9 +67,7 @@ class SaveCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": url_for(
-                    "api.saveitem", user=user.id, recipe=recipe.id
-                )
+                "Location": url_for("api.saveitem", user=user, recipe=recipe)
             },
         )
 

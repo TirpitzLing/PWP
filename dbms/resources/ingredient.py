@@ -58,7 +58,7 @@ class IngredientCollection(Resource):
             status=201,
             headers={
                 "Location": url_for(
-                    "api.ingredientitem", ingredient=ingredient.id
+                    "api.ingredientitem", ingredient=ingredient
                 )
             },
         )

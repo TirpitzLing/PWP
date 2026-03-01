@@ -88,8 +88,8 @@ class RecipeIngredientCollection(Resource):
             headers={
                 "Location": url_for(
                     "api.recipeingredientitem",
-                    recipe=recipe.id,
-                    ingredient=ingredient.id,
+                    recipe=recipe,
+                    ingredient=ingredient,
                 )
             },
         )

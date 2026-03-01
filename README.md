@@ -118,11 +118,7 @@ ctx.pop()
 For other tables sample data can be added similarly, and for more complex data, you can create a separate script to insert multiple records at once.
 
 ```bash
-# Run the app
-export FLASK_APP=dbms/app.py
+export FLASK_APP=dbms
+flask init-db
 flask run
-
-# Run the tests
-pytest tests/
-
 ```

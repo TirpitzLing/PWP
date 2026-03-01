@@ -73,7 +73,7 @@ class RecipeCollection(Resource):
 
         return Response(
             status=201,
-            headers={"Location": url_for("api.recipeitem", recipe=recipe.id)},
+            headers={"Location": url_for("api.recipeitem", recipe=recipe)},
         )
 
 

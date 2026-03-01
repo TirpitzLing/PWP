@@ -6,7 +6,6 @@ from werkzeug.exceptions import HTTPException
 from flask_swagger_ui import get_swaggerui_blueprint
 
 from dbms.extensions import db, cache
-from dbms.api import api_bp, api
 from dbms.converters import (
     RecipeConverter,
     UserConverter,
@@ -65,49 +64,13 @@ def create_app(test_config=None):
     app.url_map.converters["save"] = SaveConverter
 
     from dbms import models
-    from dbms.resources.recipe import (
-        RecipeCollection,
-        RecipeItem,
-        RecipeNutrition,
-    )
-    from dbms.resources.ingredient import IngredientCollection, IngredientItem
-    from dbms.resources.user import (
-        UserCollection,
-        UserItem,
-        UserRecipeCollection,
-    )
-    from dbms.resources.recipeIngredient import (
-        RecipeIngredientCollection,
-        RecipeIngredientItem,
-    )
-    from dbms.resources.save import SaveCollection, SaveItem
 
     # CLI cmd
     app.cli.add_command(models.init_db_command)
 
-    # register routes
-    api.add_resource(RecipeCollection, "/recipes/")
-    api.add_resource(RecipeItem, "/recipes/<recipe:recipe>/")
-    api.add_resource(RecipeNutrition, "/recipes/<recipe:recipe>/nutrition/")
-    api.add_resource(
-        RecipeIngredientCollection, "/recipes/<recipe:recipe>/ingredients/"
-    )
-    api.add_resource(
-        RecipeIngredientItem,
-        "/recipes/<recipe:recipe>/ingredients/<ingredient:ingredient>/",
-    )
-
-    api.add_resource(UserCollection, "/users/")
-    api.add_resource(UserItem, "/users/<user:user>/")
-    api.add_resource(UserRecipeCollection, "/users/<user:user>/recipes/")
-
-    api.add_resource(SaveCollection, "/users/<user:user>/saves/")
-    api.add_resource(SaveItem, "/users/<user:user>/saves/<recipe:recipe>/")
-
-    api.add_resource(IngredientCollection, "/ingredients/")
-    api.add_resource(IngredientItem, "/ingredients/<ingredient:ingredient>/")
-
     # register blueprint
+    from dbms.api import api_bp
+
     app.register_blueprint(api_bp)
 
     @app.errorhandler(HTTPException)

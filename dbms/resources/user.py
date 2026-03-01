@@ -15,7 +15,7 @@ from werkzeug.exceptions import (
     UnsupportedMediaType,
     Forbidden,
 )
-from dbms.extensions import db, api
+from dbms.extensions import db
 from dbms.models import User
 from dbms.auth import api_key_required
 import json
@@ -79,7 +79,7 @@ class UserCollection(Resource):
         return Response(
             json.dumps(response_data),
             status=201,
-            headers={"Location": url_for("api.useritem", user=user.id)},
+            headers={"Location": url_for("api.useritem", user=user)},
             mimetype="application/json",
         )
 
