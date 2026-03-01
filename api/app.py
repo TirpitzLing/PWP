@@ -13,7 +13,7 @@ from database.dbcreation import (
     Recipe,
     Save,
 )
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from werkzeug.routing import BaseConverter
@@ -21,7 +21,8 @@ from werkzeug.exceptions import (
     NotFound,
     HTTPException,
 )
-from api.extensions import db, api, cache
+from extensions import db, api, cache
+from flask_swagger_ui import get_swaggerui_blueprint
 
 
 db_path = os.path.join(
@@ -33,6 +34,24 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["CACHE_TYPE"] = "FileSystemCache"
 app.config["CACHE_DIR"] = os.path.join(app.instance_path, "cache")
+
+# swagger config
+SWAGGER_URL = "/api/docs"  # URL for exposing Swagger UI (without trailing '/')
+API_URL = (
+    "/static/swagger.yaml"  # Our API url (can of course be a local resource)
+)
+
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL, API_URL, config={"app_name": "DBMS Recipe API"}
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+
+# Serve swagger
+@app.route("/static/swagger.yaml")
+def send_swagger():
+    return send_from_directory("static", "swagger.yaml")
+
 
 db.init_app(app)
 api.init_app(app)

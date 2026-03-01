@@ -1,0 +1,645 @@
+openapi: 3.0.3
+info:
+    title: DBMS Recipe API
+    description: RESTful API for managing users, recipes, ingredients, and nutrition.
+    version: 1.0.0
+servers:
+    - url: /
+      description: Local Server
+
+components:
+    securitySchemes:
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: dbms-api-key
+            description: Provide your API key to access protected endpoints.
+
+    schemas:
+        User:
+            type: object
+            properties:
+                id:
+                    type: integer
+                username:
+                    type: string
+                email:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                allergies:
+                    type: string
+                    nullable: true
+        Recipe:
+            type: object
+            properties:
+                id:
+                    type: integer
+                title:
+                    type: string
+                procedure:
+                    type: string
+                    nullable: true
+                created_at:
+                    type: string
+                    format: date-time
+                servings:
+                    type: integer
+                    nullable: true
+                cuisine_type:
+                    type: string
+                    nullable: true
+                cooking_methods:
+                    type: string
+                    nullable: true
+                created_by:
+                    type: integer
+        Ingredient:
+            type: object
+            properties:
+                id:
+                    type: integer
+                name:
+                    type: string
+                img_url:
+                    type: string
+                    nullable: true
+                allergy:
+                    type: string
+                    nullable: true
+                calories:
+                    type: number
+                carbs:
+                    type: number
+                protein:
+                    type: number
+                fat:
+                    type: number
+        RecipeIngredient:
+            type: object
+            properties:
+                recipe_id:
+                    type: integer
+                ingredient_id:
+                    type: integer
+                amount:
+                    type: number
+                unit:
+                    type: string
+        Save:
+            type: object
+            properties:
+                user_id:
+                    type: integer
+                recipe_id:
+                    type: integer
+                created_at:
+                    type: string
+                    format: date-time
+
+paths:
+    # ---------------- USERS ----------------
+    /api/users/:
+        get:
+            tags: [Users]
+            summary: Get a paginated list of users
+            parameters:
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      default: 10
+                - name: offset
+                  in: query
+                  schema:
+                      type: integer
+                      default: 0
+            responses:
+                "200":
+                    description: A list of users
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/User"
+        post:
+            tags: [Users]
+            summary: Register a new user
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [username, email, pwd]
+                            properties:
+                                username:
+                                    type: string
+                                email:
+                                    type: string
+                                pwd:
+                                    type: string
+            responses:
+                "201":
+                    description: User created successfully
+                    headers:
+                        Location:
+                            schema:
+                                type: string
+                "400":
+                    description: Bad request (validation error)
+                "409":
+                    description: Username or email already exists
+
+    /api/users/{user}/:
+        get:
+            tags: [Users]
+            summary: Get user profile
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+        put:
+            tags: [Users]
+            summary: Update user profile
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                email:
+                                    type: string
+                                pwd:
+                                    type: string
+                                allergies:
+                                    type: string
+            responses:
+                "204":
+                    description: User updated successfully
+                "401":
+                    description: Unauthorized
+                "403":
+                    description: Forbidden (Not your account)
+        delete:
+            tags: [Users]
+            summary: Delete user account
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "204":
+                    description: User deleted successfully
+                "401":
+                    description: Unauthorized
+                "403":
+                    description: Forbidden
+
+    /api/users/{user}/recipes/:
+        get:
+            tags: [Users]
+            summary: Get recipes created by a specific user
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "200":
+                    description: A list of recipes
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Recipe"
+
+    # ---------------- SAVES (Bookmarks) ----------------
+    /api/users/{user}/saves/:
+        get:
+            tags: [Saves]
+            summary: Get all saved recipes for a user
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "200":
+                    description: List of saved recipes
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Save"
+                "403":
+                    description: Forbidden
+        post:
+            tags: [Saves]
+            summary: Save a recipe to collection
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [recipe_id]
+                            properties:
+                                recipe_id:
+                                    type: integer
+            responses:
+                "201":
+                    description: Recipe saved
+                "409":
+                    description: Recipe already saved
+
+    /api/users/{user}/saves/{recipe}/:
+        delete:
+            tags: [Saves]
+            summary: Remove a saved recipe from collection
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: user
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "204":
+                    description: Save removed successfully
+
+    # ---------------- RECIPES ----------------
+    /api/recipes/:
+        get:
+            tags: [Recipes]
+            summary: Get paginated recipes
+            parameters:
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      default: 10
+                - name: offset
+                  in: query
+                  schema:
+                      type: integer
+                      default: 0
+            responses:
+                "200":
+                    description: List of recipes
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Recipe"
+        post:
+            tags: [Recipes]
+            summary: Create a new recipe
+            security:
+                - ApiKeyAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [title]
+                            properties:
+                                title:
+                                    type: string
+                                procedure:
+                                    type: string
+                                servings:
+                                    type: integer
+                                cuisine_type:
+                                    type: string
+            responses:
+                "201":
+                    description: Recipe created
+
+    /api/recipes/{recipe}/:
+        get:
+            tags: [Recipes]
+            summary: Get recipe details
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "200":
+                    description: Recipe details
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Recipe"
+        put:
+            tags: [Recipes]
+            summary: Update a recipe
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                title:
+                                    type: string
+                                procedure:
+                                    type: string
+                                servings:
+                                    type: integer
+            responses:
+                "204":
+                    description: Updated successfully
+                "403":
+                    description: Forbidden
+        delete:
+            tags: [Recipes]
+            summary: Delete a recipe
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "204":
+                    description: Deleted successfully
+                "403":
+                    description: Forbidden
+
+    /api/recipes/{recipe}/nutrition/:
+        get:
+            tags: [Recipes]
+            summary: Calculate total nutrition for a recipe
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "200":
+                    description: Nutritional information
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    total_calories:
+                                        type: number
+                                    total_carbs:
+                                        type: number
+                                    total_protein:
+                                        type: number
+                                    total_fat:
+                                        type: number
+
+    # ---------------- INGREDIENTS ----------------
+    /api/ingredients/:
+        get:
+            tags: [Ingredients]
+            summary: Get paginated ingredients
+            parameters:
+                - name: limit
+                  in: query
+                  schema:
+                      type: integer
+                      default: 10
+                - name: offset
+                  in: query
+                  schema:
+                      type: integer
+                      default: 0
+            responses:
+                "200":
+                    description: List of ingredients
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Ingredient"
+        post:
+            tags: [Ingredients]
+            summary: Add a new ingredient to database
+            security:
+                - ApiKeyAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [name]
+                            properties:
+                                name:
+                                    type: string
+                                calories:
+                                    type: number
+                                protein:
+                                    type: number
+                                carbs:
+                                    type: number
+                                fat:
+                                    type: number
+            responses:
+                "201":
+                    description: Ingredient created
+
+    /api/ingredients/{ingredient}/:
+        get:
+            tags: [Ingredients]
+            summary: Get ingredient details
+            parameters:
+                - name: ingredient
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "200":
+                    description: Ingredient details
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Ingredient"
+        put:
+            tags: [Ingredients]
+            summary: Update ingredient details
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: ingredient
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                calories:
+                                    type: number
+            responses:
+                "204":
+                    description: Updated successfully
+
+    # ---------------- RECIPE INGREDIENTS ----------------
+    /api/recipes/{recipe}/ingredients/:
+        get:
+            tags: [Recipe Ingredients]
+            summary: Get all ingredients for a specific recipe
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "200":
+                    description: List of ingredient associations
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/RecipeIngredient"
+        post:
+            tags: [Recipe Ingredients]
+            summary: Add an ingredient to a recipe
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [ingredient_id]
+                            properties:
+                                ingredient_id:
+                                    type: integer
+                                amount:
+                                    type: number
+                                unit:
+                                    type: string
+            responses:
+                "201":
+                    description: Added successfully
+                "409":
+                    description: Conflict (already exists)
+
+    /api/recipes/{recipe}/ingredients/{ingredient}/:
+        put:
+            tags: [Recipe Ingredients]
+            summary: Update amount/unit of an ingredient in a recipe
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                - name: ingredient
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                amount:
+                                    type: number
+                                unit:
+                                    type: string
+            responses:
+                "204":
+                    description: Updated successfully
+        delete:
+            tags: [Recipe Ingredients]
+            summary: Remove an ingredient from a recipe
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: recipe
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                - name: ingredient
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                "204":
+                    description: Removed successfully
