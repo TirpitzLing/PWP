@@ -15,9 +15,14 @@ from api.app import app
 from api.extensions import db
 from database.dbcreation import Recipe, Ingredient, RecipeIngredient, User, Save
 
+from flask.testing import FlaskClient
+from werkzeug.datastructures import Headers
+import base64
+
 
 @pytest.fixture
 def client():
+    # no real http request is used
     ctx = app.app_context()
     ctx.push()
 
@@ -27,10 +32,14 @@ def client():
     db.create_all()
 
     try:
+        # generate basic data
         _populate_db()
+        # client with auth
+        app.test_client_class = AuthHeaderClient
         yield app.test_client()
     finally:
         db.session.remove()
+        # clear context
         db.drop_all()
         ctx.pop()
 
@@ -69,6 +78,22 @@ def _populate_db():
     db.session.commit()
 
 
+class AuthHeaderClient(FlaskClient):
+    def open(self, *args, **kwargs):
+        # generate header for basic auth
+        credentials = "test-user:test-password"
+        token = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
+
+        headers = Headers({"Authorization": f"Basic {token}"})
+
+        # if the test has a header
+        extra_headers = kwargs.pop("headers", Headers())
+        headers.extend(extra_headers)
+        kwargs["headers"] = headers
+
+        return super().open(*args, **kwargs)
+
+
 def _get_auth_headers():
     credentials = "test-user:test-password"
     token = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
@@ -99,7 +124,7 @@ class TestRecipeCollection:
     def test_post_valid_request(self, client):
         valid = _get_recipe_json()
         # add headers=_get_auth_headers() for id auth
-        resp = client.post(self.RESOURCE_URL, json=valid, headers=_get_auth_headers())
+        resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 201
 
         resp = client.get(resp.headers["Location"])
@@ -123,7 +148,7 @@ class TestRecipeCollection:
     #     valid = _get_recipe_json()
     #     valid["title"] = "test-recipe-1"
     #     valid["id"] = 1 # primary key conflict
-    #     resp = client.post(self.RESOURCE_URL, json=valid, headers=_get_auth_headers())
+    #     resp = client.post(self.RESOURCE_URL, json=valid)
     #     assert resp.status_code == 409
 
 
@@ -144,18 +169,18 @@ class TestRecipeItem:
 
     def test_put_valid_request(self, client):
         valid = _get_recipe_json()
-        resp = client.put(self.RESOURCE_URL, json=valid, headers=_get_auth_headers())
+        resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 204
 
     def test_wrong_mediatype(self, client):
         valid = _get_recipe_json()
-        resp = client.put(self.RESOURCE_URL, data=json.dumps(valid), headers=_get_auth_headers())
+        resp = client.put(self.RESOURCE_URL, data=json.dumps(valid))
         assert resp.status_code == 415
 
     def test_put_missing_field(self, client):
         valid = _get_recipe_json()
         valid.pop("title")
-        resp = client.put(self.RESOURCE_URL, json=valid, headers=_get_auth_headers())
+        resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 400
 
     def test_put_name_conflict(self, client):
@@ -165,7 +190,7 @@ class TestRecipeItem:
         assert resp.status_code == 409
 
     def test_delete(self, client):
-        resp = client.delete(self.RESOURCE_URL, headers=_get_auth_headers())
+        resp = client.delete(self.RESOURCE_URL)
         assert resp.status_code == 204
         resp = client.get(self.RESOURCE_URL)
         assert resp.status_code == 404
@@ -184,7 +209,7 @@ class TestRecipeIngredient:
 
     def test_post_valid_request(self, client):
         valid = {"ingredient_id": 2, "amount": 1.0, "unit": "g"}
-        resp = client.post(self.RESOURCE_URL, json=valid, headers=_get_auth_headers())
+        resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 201
 
         resp = client.get(self.RESOURCE_URL)
@@ -193,7 +218,7 @@ class TestRecipeIngredient:
 
     def test_post_wrong_mediatype(self, client):
         valid = {"ingredient_id": 2}
-        resp = client.post(self.RESOURCE_URL, data=json.dumps(valid), headers=_get_auth_headers())
+        resp = client.post(self.RESOURCE_URL, data=json.dumps(valid))
         assert resp.status_code == 415
 
 
