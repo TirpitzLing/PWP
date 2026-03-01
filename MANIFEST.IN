@@ -1,0 +1,2 @@
+graft dbms/static
+global-exclude *.pyc

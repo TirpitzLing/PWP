@@ -1,15 +1,10 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 import secrets
 import hashlib
-
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///dbms.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db = SQLAlchemy(app)
+from dbms.extensions import db
+import click
+from flask.cli import with_appcontext
 
 
 class User(db.Model):
@@ -345,3 +340,11 @@ class Save(db.Model):
         }
 
         return schema
+
+
+@click.command("init-db")
+@with_appcontext
+def init_db_command():
+    """Clear the existing data and create new tables."""
+    db.create_all()
+    click.echo("Initialized the database.")

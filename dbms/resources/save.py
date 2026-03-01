@@ -8,8 +8,9 @@ from flask import request, Response
 from flask_restful import Resource
 from werkzeug.exceptions import BadRequest, Conflict, Forbidden
 from dbms.models import Recipe, Save
-from dbms.extensions import db, api
+from dbms.extensions import db
 from dbms.auth import api_key_required
+from flask import url_for
 
 
 class SaveCollection(Resource):
@@ -66,7 +67,9 @@ class SaveCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": api.url_for(SaveItem, user=user, recipe=recipe)
+                "Location": url_for(
+                    "api.saveitem", user=user.id, recipe=recipe.id
+                )
             },
         )
 

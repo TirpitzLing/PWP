@@ -13,10 +13,11 @@ from werkzeug.exceptions import (
     Conflict,
     Forbidden,
 )
-from dbms.extensions import db, api, cache
+from dbms.extensions import db, cache
 from sqlalchemy.exc import IntegrityError
 from dbms.models import Ingredient, RecipeIngredient
 from dbms.auth import api_key_required
+from flask import url_for
 
 
 class RecipeIngredientCollection(Resource):
@@ -85,8 +86,10 @@ class RecipeIngredientCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": api.url_for(
-                    RecipeIngredientItem, recipe=recipe, ingredient=ingredient
+                "Location": url_for(
+                    "api.recipeingredientitem",
+                    recipe=recipe.id,
+                    ingredient=ingredient.id,
                 )
             },
         )

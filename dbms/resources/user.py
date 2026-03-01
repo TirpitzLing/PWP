@@ -19,6 +19,7 @@ from dbms.extensions import db, api
 from dbms.models import User
 from dbms.auth import api_key_required
 import json
+from flask import url_for
 
 
 class UserCollection(Resource):
@@ -78,7 +79,7 @@ class UserCollection(Resource):
         return Response(
             json.dumps(response_data),
             status=201,
-            headers={"Location": api.url_for(UserItem, user=user)},
+            headers={"Location": url_for("api.useritem", user=user.id)},
             mimetype="application/json",
         )
 

@@ -8,8 +8,9 @@ from werkzeug.exceptions import (
     UnsupportedMediaType,
     Forbidden,
 )
-from dbms.extensions import db, api, cache
+from dbms.extensions import db, cache
 from dbms.models import Recipe
+from flask import url_for
 
 from dbms.auth import api_key_required
 from datetime import datetime, timezone
@@ -72,7 +73,7 @@ class RecipeCollection(Resource):
 
         return Response(
             status=201,
-            headers={"Location": api.url_for(RecipeItem, recipe=recipe)},
+            headers={"Location": url_for("api.recipeitem", recipe=recipe.id)},
         )
 
 

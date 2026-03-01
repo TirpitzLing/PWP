@@ -7,8 +7,9 @@ from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
-from dbms.extensions import db, api, cache
+from dbms.extensions import db, cache
 from dbms.models import Ingredient
+from flask import url_for
 
 
 class IngredientCollection(Resource):
@@ -56,7 +57,9 @@ class IngredientCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": api.url_for(IngredientItem, ingredient=ingredient)
+                "Location": url_for(
+                    "api.ingredientitem", ingredient=ingredient.id
+                )
             },
         )
 

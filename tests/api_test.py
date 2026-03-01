@@ -5,48 +5,62 @@ Run the tests and generate the coverage report using:
 python -m pytest api/test.py --cov=api --cov-report=term-missing
 """
 
-from datetime import datetime
+import os
+import tempfile
 import json
 import pytest
+from datetime import datetime
 from werkzeug.security import generate_password_hash
-
-from dbms import app
-from dbms.extensions import db
-from dbms.models import (
-    Recipe,
-    Ingredient,
-    RecipeIngredient,
-    User,
-)
-
-from flask.testing import FlaskClient
 from werkzeug.datastructures import Headers
+from flask.testing import FlaskClient
+
+from dbms import create_app
+from dbms.extensions import db
+from dbms.models import Recipe, Ingredient, RecipeIngredient, User
 
 TEST_KEY = "verysafetestkey"
 
 
+class AuthHeaderClient(FlaskClient):
+    def open(self, *args, **kwargs):
+        # put api_key
+        headers = Headers({"dbms-api-key": TEST_KEY})
+
+        extra_headers = kwargs.pop("headers", Headers())
+        headers.extend(extra_headers)
+        kwargs["headers"] = headers
+
+        return super().open(*args, **kwargs)
+
+
 @pytest.fixture
 def client():
-    # no real http request is used
-    ctx = app.app_context()
-    ctx.push()
+    # tmp db
+    db_fd, db_fname = tempfile.mkstemp()
 
-    app.config["CACHE_TYPE"] = "NullCache"
+    config = {
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///" + db_fname,
+        "TESTING": True,
+        "CACHE_TYPE": "NullCache",
+        "TEST_CLIENT_CLASS": AuthHeaderClient,
+    }
 
-    db.drop_all()
-    db.create_all()
+    app = create_app(config)
+    app.test_client_class = AuthHeaderClient
 
-    try:
-        # generate basic data
+    # context
+    with app.app_context():
+        db.create_all()
         _populate_db()
-        # client with auth
-        app.test_client_class = AuthHeaderClient
+
         yield app.test_client()
-    finally:
+
+        # clear test
         db.session.remove()
-        # clear context
         db.drop_all()
-        ctx.pop()
+
+    os.close(db_fd)
+    os.unlink(db_fname)
 
 
 def _populate_db():
@@ -84,18 +98,6 @@ def _populate_db():
         db.session.add(assoc)
 
     db.session.commit()
-
-
-class AuthHeaderClient(FlaskClient):
-    def open(self, *args, **kwargs):
-        # put api_key
-        headers = Headers({"dbms-api-key": TEST_KEY})
-
-        extra_headers = kwargs.pop("headers", Headers())
-        headers.extend(extra_headers)
-        kwargs["headers"] = headers
-
-        return super().open(*args, **kwargs)
 
 
 def _get_recipe_json(number=1):
