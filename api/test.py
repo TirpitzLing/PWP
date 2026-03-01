@@ -17,7 +17,6 @@ from database.dbcreation import (
     Ingredient,
     RecipeIngredient,
     User,
-    Save,
 )
 
 from flask.testing import FlaskClient
@@ -413,7 +412,10 @@ class TestIngredientItem:
         assert resp.status_code == 204
 
     def test_put_invalid_type(self, client):
-        """test input wrong type, calories should be number but provided string (400)"""
+        """
+        test input wrong type, calories should be number but
+        provided string (400)
+        """
         valid = {"name": "Salt", "calories": "too high"}
         resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 400

@@ -20,7 +20,10 @@ from api.auth import api_key_required
 
 
 class RecipeIngredientCollection(Resource):
-    """Resource for managing a collection of ingredients for a specific recipe."""
+    """
+    Resource for managing a collection of ingredients for a specific
+    recipe.
+    """
 
     @cache.cached(timeout=None)
     def get(self, recipe):
@@ -73,7 +76,8 @@ class RecipeIngredientCollection(Resource):
         except IntegrityError:
             db.session.rollback()
             raise Conflict(
-                description="This ingredient has already been added to the recipe"
+                description="This ingredient has already been added to the "
+                "recipe"
             )
 
         cache.clear()
@@ -99,7 +103,8 @@ class RecipeIngredientItem(Resource):
         """
         if recipe.created_by != request.current_user.id:
             raise Forbidden(
-                description="You can only update ingredients in your own recipes."
+                description="You can only update ingredients in your own "
+                "recipes."
             )
 
         # update the amount and unit of an ingredient
@@ -136,7 +141,8 @@ class RecipeIngredientItem(Resource):
         # remove an ingredient from the recipe
         if recipe.created_by != request.current_user.id:
             raise Forbidden(
-                description="You can only delete ingredients from your own recipes."
+                description="You can only delete ingredients from your own "
+                "recipes."
             )
 
         assoc = RecipeIngredient.query.filter_by(

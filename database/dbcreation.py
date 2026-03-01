@@ -1,11 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CheckConstraint
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 import secrets
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 import hashlib
 
 app = Flask(__name__)
@@ -40,7 +37,9 @@ class User(db.Model):
 
     recipes = db.relationship("Recipe", back_populates="creator")
     saved_recipes = db.relationship("Save", back_populates="user")
-    # ingredient_preferences = db.relationship("UserIngredientPreference", back_populates="user")
+    # ingredient_preferences = db.relationship(
+    #     "UserIngredientPreference", back_populates="user"
+    # )
     # allergies = db.relationship("UserAllergy", back_populates="user")
 
     api_key = db.Column(db.String(128), unique=True, nullable=False)
@@ -193,7 +192,9 @@ class Recipe(db.Model):
         "RecipeIngredient",
         back_populates="recipe",
     )
-    # cooking_methods = db.relationship("RecipeCookingMethod", back_populates="recipe")
+    # cooking_methods = db.relationship(
+    #     "RecipeCookingMethod", back_populates="recipe"
+    # )
     saved_by = db.relationship("Save", back_populates="recipe")
 
     def serialize(self):

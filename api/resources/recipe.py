@@ -2,15 +2,15 @@ from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
-from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
-from api.extensions import db, api, cache
-from database.dbcreation import Recipe
 from werkzeug.exceptions import (
     Conflict,
     BadRequest,
     UnsupportedMediaType,
     Forbidden,
 )
+from api.extensions import db, api, cache
+from database.dbcreation import Recipe
+
 from api.auth import api_key_required
 from datetime import datetime, timezone
 
@@ -142,7 +142,8 @@ class RecipeNutrition(Resource):
     @cache.cached(timeout=None)
     def get(self, recipe):
         """
-        Calculate total nutrition based on the ingredients associated with the recipe.
+        Calculate total nutrition based on the ingredients associated with the
+        recipe.
         """
         # calculate total nutrition based on ingredients
         total_calories = 0.0

@@ -1,6 +1,7 @@
 """
 API resources for managing users.
-Handles user registration, profile updates, account deletion, and fetching user recipes.
+Handles user registration, profile updates, account deletion,
+and fetching user recipes.
 """
 
 from datetime import datetime, timezone
@@ -54,7 +55,8 @@ class UserCollection(Resource):
             raise BadRequest(description=str(e))
 
         user = User()
-        # get plain api key, first time register, generate a key and response with the key
+        # get plain api key, first time register, generate a key and
+        # response with the key
         # otherwise, return None
         raw_api_key = user.deserialize(request.json)
 

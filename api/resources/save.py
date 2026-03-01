@@ -81,7 +81,7 @@ class SaveItem(Resource):
         """
         if request.current_user.id != user.id:
             raise Forbidden(
-                description="You can only remove recipes from your own account."
+                description="You can only remove recipes from your own account"
             )
 
         # remove a saved recipe

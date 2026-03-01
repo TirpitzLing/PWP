@@ -12,7 +12,8 @@ from database.dbcreation import User
 def api_key_required(f):
     """
     Decorator to require API Key Authentication for an API endpoint.
-    Checks the 'dbms-api-key' header and verifies credentials against the database.
+    Checks the 'dbms-api-key' header and verifies credentials against the
+    database.
     """
 
     @wraps(f)
@@ -21,7 +22,8 @@ def api_key_required(f):
         api_key_raw = request.headers.get("dbms-api-key")
         if not api_key_raw:
             raise Unauthorized(
-                description="Authentication required. Please provide a valid dbms-api-key header."
+                description="Authentication required. Please provide a valid "
+                "dbms-api-key header."
             )
 
         # match api ket after hashing
