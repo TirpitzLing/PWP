@@ -49,12 +49,16 @@ class User(db.Model):
         }
 
     def deserialize(self, doc):
+        # mandatory
         self.username = doc["username"]
         self.email = doc["email"]
+        # this hash uses salting to avoid Credential Stuffing Attack
+        # use PBKDF2 to slow down calculation
         self.pwd = generate_password_hash(doc["pwd"])
 
         self.created_at = datetime.fromisoformat(doc["created_at"]) if doc.get("created_at") else None
 
+        # optional
         self.allergies = doc.get("allergies")
 
     @staticmethod

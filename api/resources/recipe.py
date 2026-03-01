@@ -12,6 +12,7 @@ from api.auth import basic_auth_required
 class RecipeCollection(Resource):
     """Resource for managing a collection of recipes."""
 
+    # TODO filtering by attributes
     @cache.cached(timeout=None, query_string=True)
     def get(self):
         """
@@ -44,6 +45,7 @@ class RecipeCollection(Resource):
         recipe = Recipe()
         recipe.deserialize(request.json)
 
+        # front-end's concern
         if recipe.created_by != request.current_user.id:
             raise Forbidden(description="You can only create recipes under your own user ID.")
 

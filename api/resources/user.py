@@ -16,6 +16,8 @@ from database.dbcreation import User
 class UserCollection(Resource):
     """Resource for managing a collection of users."""
 
+    # TODO filtering by attributes
+    # frequent user registration, no cache
     def get(self):
         """
         Retrieve a paginated list of all users.
@@ -61,6 +63,7 @@ class UserCollection(Resource):
 class UserItem(Resource):
     """Resource for managing a specific user profile."""
 
+    # user's private data, no cache
     def get(self, user):
         """
         Retrieve details of a specific user profile.

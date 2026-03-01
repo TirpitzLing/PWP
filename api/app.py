@@ -78,6 +78,7 @@ class SaveConverter(BaseConverter):
 
     def to_python(self, save_id):
         try:
+            # user_id & recipe_id, primary key
             user_id_str, recipe_id_str = save_id.split("-")
             user_id = int(user_id_str)
             recipe_id = int(recipe_id_str)

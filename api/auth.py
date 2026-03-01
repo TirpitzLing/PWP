@@ -18,7 +18,7 @@ def basic_auth_required(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Extract authorization data from the request
+        # Extract authorization data from the request header
         auth = request.authorization
 
         # Check if auth details are provided

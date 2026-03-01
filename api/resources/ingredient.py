@@ -14,6 +14,7 @@ from database.dbcreation import Ingredient
 class IngredientCollection(Resource):
     """Resource for managing a collection of ingredients."""
 
+    # TODO filtering by attributes
     @cache.cached(timeout=None, query_string=True)
     def get(self):
         """
