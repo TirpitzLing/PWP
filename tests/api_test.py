@@ -17,7 +17,7 @@ from flask.testing import FlaskClient
 
 from dbms import create_app
 from dbms.extensions import db
-from dbms.models import Recipe, Ingredient, RecipeIngredient, User
+from dbms.models import Recipe, Ingredient, RecipeIngredient, User, Save
 
 warnings.filterwarnings("ignore", category=ResourceWarning)
 
@@ -127,13 +127,30 @@ def _get_recipe_json(number=1):
     }
 
 
+def test_create_app_no_config():
+    """test load config without test config"""
+    app = create_app(test_config=None)
+    assert app is not None
+    assert "sqlite" in app.config["SQLALCHEMY_DATABASE_URI"]
+
+
 class TestCLICommands:
     def test_cli(self, client):
         runner = client.application.test_cli_runner()
-        # test init db
+        # init db
         assert runner.invoke(args=["init-db"]).exit_code == 0
-        # test populate
+        # populate the first time, if have user, return
         assert runner.invoke(args=["populate-db"]).exit_code == 0
+
+        # clear db to test populate in models.py
+        with client.application.app_context():
+            db.session.query(Save).delete()
+            db.session.query(RecipeIngredient).delete()
+            db.session.query(Recipe).delete()
+            db.session.query(Ingredient).delete()
+            db.session.query(User).delete()
+            db.session.commit()
+
         assert runner.invoke(args=["populate-db"]).exit_code == 0
 
 
@@ -204,8 +221,7 @@ class TestRecipeItem:
         assert body["title"] == "test-recipe-1"
 
     def test_get_not_found(self, client):
-        resp = client.get(self.INVALID_URL)
-        assert resp.status_code == 404
+        assert client.get(self.INVALID_URL).status_code == 404
 
     def test_put_valid_request(self, client):
         valid = _get_recipe_json()
@@ -216,6 +232,11 @@ class TestRecipeItem:
         # check if the update is actually successful
         check_resp = client.get(self.RESOURCE_URL)
         assert json.loads(check_resp.data)["title"] == "Updated Title"
+
+    def test_put_not_found(self, client):
+        # 404 if not found recipe
+        valid = _get_recipe_json()
+        assert client.put(self.INVALID_URL, json=valid).status_code == 404
 
     def test_wrong_mediatype(self, client):
         assert (
@@ -252,10 +273,8 @@ class TestRecipeItem:
         )
 
     def test_delete(self, client):
-        resp = client.delete(self.RESOURCE_URL)
-        assert resp.status_code == 204
-        resp = client.get(self.RESOURCE_URL)
-        assert resp.status_code == 404
+        assert client.delete(self.RESOURCE_URL).status_code == 204
+        assert client.get(self.RESOURCE_URL).status_code == 404
 
     def test_unauthorized(self, client):
         valid = _get_recipe_json()
@@ -357,6 +376,15 @@ class TestRecipeIngredientItem:
             == 404
         )
 
+    def test_put_assoc_not_found(self, client):
+        # test edit a non-exist ingredient(404)
+        assert (
+            client.put(
+                "/api/recipes/1/ingredients/2/", json={"amount": 5.0}
+            ).status_code
+            == 404
+        )
+
     def test_put_forbidden(self, client):
         assert (
             client.put(
@@ -378,6 +406,12 @@ class TestRecipeIngredientItem:
     def test_delete_success(self, client):
         assert client.delete(self.RESOURCE_URL).status_code == 204
 
+    def test_delete_assoc_not_found(self, client):
+        # delete a non-exist assoc ingredient (204)
+        assert (
+            client.delete("/api/recipes/1/ingredients/2/").status_code == 204
+        )
+
 
 class TestSave:
     COLLECTION_URL = "/api/users/1/saves/"
@@ -388,6 +422,15 @@ class TestSave:
         assert resp.status_code == 200
         body = json.loads(resp.data)
         assert body == []
+
+    def test_get_forbidden(self, client):
+        # test check other user's save folder
+        assert (
+            client.get(
+                self.COLLECTION_URL, headers={"dbms-api-key": "user2key"}
+            ).status_code
+            == 403
+        )
 
     def test_post_save(self, client):
         valid = {"recipe_id": 1}
@@ -411,6 +454,10 @@ class TestSave:
     def test_delete_save(self, client):
         client.post(self.COLLECTION_URL, json={"recipe_id": 2})
         assert client.delete(self.ITEM_URL + "2/").status_code == 204
+
+    def test_delete_save_not_found(self, client):
+        # test delete a non-exist save
+        assert client.delete(self.ITEM_URL + "3/").status_code == 204
 
     def test_unauthorized(self, client):
         assert (
@@ -543,6 +590,15 @@ class TestUserItem:
             ).status_code
             == 403
         )
+
+
+class TestUserRecipeCollection:
+    def test_get_user_recipes(self, client):
+        resp = client.get("/api/users/1/recipes/")
+        assert resp.status_code == 200
+        body = json.loads(resp.data)
+        assert len(body) > 0
+        assert "title" in body[0]
 
 
 class TestIngredientCollection:
