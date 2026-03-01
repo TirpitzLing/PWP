@@ -12,7 +12,13 @@ from werkzeug.security import generate_password_hash
 
 from api.app import app
 from api.extensions import db
-from database.dbcreation import Recipe, Ingredient, RecipeIngredient, User, Save
+from database.dbcreation import (
+    Recipe,
+    Ingredient,
+    RecipeIngredient,
+    User,
+    Save,
+)
 
 from flask.testing import FlaskClient
 from werkzeug.datastructures import Headers
@@ -73,7 +79,9 @@ def _populate_db():
         db.session.add(ing)
         db.session.commit()
 
-        assoc = RecipeIngredient(recipe_id=recipe.id, ingredient_id=ing.id, amount=1.0, unit="piece")
+        assoc = RecipeIngredient(
+            recipe_id=recipe.id, ingredient_id=ing.id, amount=1.0, unit="piece"
+        )
         db.session.add(assoc)
 
     db.session.commit()
@@ -92,7 +100,11 @@ class AuthHeaderClient(FlaskClient):
 
 
 def _get_recipe_json(number=1):
-    return {"title": f"extra-recipe-{number}", "procedure": "Extra instructions", "created_by": 1}
+    return {
+        "title": f"extra-recipe-{number}",
+        "procedure": "Extra instructions",
+        "created_by": 1,
+    }
 
 
 class TestRecipeCollection:
@@ -132,7 +144,11 @@ class TestRecipeCollection:
     def test_unauthorized(self, client):
         valid = _get_recipe_json()
         # input wrong api key
-        resp = client.post(self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "wrong-key"})
+        resp = client.post(
+            self.RESOURCE_URL,
+            json=valid,
+            headers={"dbms-api-key": "wrong-key"},
+        )
         # should be 401 unauthorized
         assert resp.status_code == 401
 
@@ -195,7 +211,11 @@ class TestRecipeItem:
 
     def test_unauthorized(self, client):
         valid = _get_recipe_json()
-        resp = client.put(self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "invalid-key"})
+        resp = client.put(
+            self.RESOURCE_URL,
+            json=valid,
+            headers={"dbms-api-key": "invalid-key"},
+        )
         assert resp.status_code == 401
 
 
@@ -255,7 +275,11 @@ class TestSave:
         assert all(r["title"] != "test-recipe-1" for r in body)
 
     def test_unauthorized(self, client):
-        resp = client.post(self.COLLECTION_URL, json={"recipe_id": 1}, headers={"dbms-api-key": "wrong"})
+        resp = client.post(
+            self.COLLECTION_URL,
+            json={"recipe_id": 1},
+            headers={"dbms-api-key": "wrong"},
+        )
         assert resp.status_code == 401
 
 
@@ -286,16 +310,31 @@ class TestUserItem:
         assert resp.status_code == 404
 
     def test_put_success(self, client):
-        valid = {"username": "updated-user", "email": "test@example.com", "pwd": "pwd"}
+        valid = {
+            "username": "updated-user",
+            "email": "test@example.com",
+            "pwd": "pwd",
+        }
         resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 204
 
     def test_put_conflict(self, client):
         """test when update, username conflict (409)"""
         # create user2
-        client.post("/api/users/", json={"username": "user2", "email": "user2@test.com", "pwd": "123"})
+        client.post(
+            "/api/users/",
+            json={
+                "username": "user2",
+                "email": "user2@test.com",
+                "pwd": "123",
+            },
+        )
         # try update user1 name to user2
-        valid = {"username": "user2", "email": "test@example.com", "pwd": "pwd"}
+        valid = {
+            "username": "user2",
+            "email": "test@example.com",
+            "pwd": "pwd",
+        }
         resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 409
 
@@ -318,7 +357,9 @@ class TestUserItem:
 
     def test_unauthorized(self, client):
         valid = {"username": "hacker", "email": "hacker@test.com"}
-        resp = client.put(self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "none"})
+        resp = client.put(
+            self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "none"}
+        )
         assert resp.status_code == 401
 
 

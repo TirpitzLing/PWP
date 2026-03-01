@@ -5,7 +5,12 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
 from api.extensions import db, api, cache
 from database.dbcreation import Recipe
-from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
+from werkzeug.exceptions import (
+    Conflict,
+    BadRequest,
+    UnsupportedMediaType,
+    Forbidden,
+)
 from api.auth import api_key_required
 from datetime import datetime, timezone
 
@@ -37,7 +42,9 @@ class RecipeCollection(Resource):
         """
         # create a new recipe
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON"
+            )
 
         try:
             validate(request.json, Recipe.json_schema())
@@ -63,7 +70,10 @@ class RecipeCollection(Resource):
 
         cache.clear()
 
-        return Response(status=201, headers={"Location": api.url_for(RecipeItem, recipe=recipe)})
+        return Response(
+            status=201,
+            headers={"Location": api.url_for(RecipeItem, recipe=recipe)},
+        )
 
 
 class RecipeItem(Resource):
@@ -86,10 +96,14 @@ class RecipeItem(Resource):
         """
         # update a recipe
         if recipe.created_by != request.current_user.id:
-            raise Forbidden(description="You can only update your own recipes.")
+            raise Forbidden(
+                description="You can only update your own recipes."
+            )
 
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, Recipe.json_schema())
@@ -111,7 +125,9 @@ class RecipeItem(Resource):
         Invalidates cache upon successful deletion.
         """
         if recipe.created_by != request.current_user.id:
-            raise Forbidden(description="You can only delete your own recipes.")
+            raise Forbidden(
+                description="You can only delete your own recipes."
+            )
 
         # delete a recipe
         db.session.delete(recipe)

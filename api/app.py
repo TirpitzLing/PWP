@@ -1,24 +1,44 @@
 from datetime import datetime
 import os
 from api.resources.recipe import RecipeCollection, RecipeItem
-from api.resources.recipeIngredient import RecipeIngredientCollection, RecipeIngredientItem
+from api.resources.recipeIngredient import (
+    RecipeIngredientCollection,
+    RecipeIngredientItem,
+)
 from api.resources.save import SaveCollection, SaveItem
 from api.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
-from api.resources.recipeIngredient import RecipeIngredientCollection, RecipeIngredientItem
+from api.resources.recipeIngredient import (
+    RecipeIngredientCollection,
+    RecipeIngredientItem,
+)
 from api.resources.save import SaveCollection, SaveItem
 from api.resources.ingredient import IngredientCollection, IngredientItem
 from api.resources.user import UserCollection, UserItem, UserRecipeCollection
-from database.dbcreation import User, Ingredient, Recipe, RecipeIngredient, Save
+from database.dbcreation import (
+    User,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    Save,
+)
 from flask import Flask, Response, request, jsonify
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from werkzeug.routing import BaseConverter
 from jsonschema import validate, ValidationError, draft7_format_checker
-from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType, HTTPException
+from werkzeug.exceptions import (
+    NotFound,
+    Conflict,
+    BadRequest,
+    UnsupportedMediaType,
+    HTTPException,
+)
 from api.extensions import db, api, cache
 
 
-db_path = os.path.join(os.path.dirname(__file__), "..", "database", "instance", "dbms.db")
+db_path = os.path.join(
+    os.path.dirname(__file__), "..", "database", "instance", "dbms.db"
+)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
@@ -85,7 +105,9 @@ class SaveConverter(BaseConverter):
         except ValueError:
             raise NotFound(f"Invalid save id format: {save_id}")
 
-        db_save = Save.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        db_save = Save.query.filter_by(
+            user_id=user_id, recipe_id=recipe_id
+        ).first()
         if db_save is None:
             raise NotFound(f"Save with id {save_id} not found.")
         return db_save
@@ -103,8 +125,13 @@ app.url_map.converters["save"] = SaveConverter
 api.add_resource(RecipeCollection, "/api/recipes/")
 api.add_resource(RecipeItem, "/api/recipes/<recipe:recipe>/")
 api.add_resource(RecipeNutrition, "/api/recipes/<recipe:recipe>/nutrition/")
-api.add_resource(RecipeIngredientCollection, "/api/recipes/<recipe:recipe>/ingredients/")
-api.add_resource(RecipeIngredientItem, "/api/recipes/<recipe:recipe>/ingredients/<ingredient:ingredient>/")
+api.add_resource(
+    RecipeIngredientCollection, "/api/recipes/<recipe:recipe>/ingredients/"
+)
+api.add_resource(
+    RecipeIngredientItem,
+    "/api/recipes/<recipe:recipe>/ingredients/<ingredient:ingredient>/",
+)
 
 # register user routes
 api.add_resource(UserCollection, "/api/users/")

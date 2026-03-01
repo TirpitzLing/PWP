@@ -20,7 +20,9 @@ def api_key_required(f):
         # get api_key from request headers
         api_key_raw = request.headers.get("dbms-api-key")
         if not api_key_raw:
-            raise Unauthorized(description="Authentication required. Please provide a valid dbms-api-key header.")
+            raise Unauthorized(
+                description="Authentication required. Please provide a valid dbms-api-key header."
+            )
 
         # match api ket after hashing
         hashed_key = User.hash_key(api_key_raw)

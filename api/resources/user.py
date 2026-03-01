@@ -8,7 +8,12 @@ from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
-from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
+from werkzeug.exceptions import (
+    Conflict,
+    BadRequest,
+    UnsupportedMediaType,
+    Forbidden,
+)
 from api.extensions import db, api
 from database.dbcreation import User
 from api.auth import api_key_required
@@ -39,7 +44,9 @@ class UserCollection(Resource):
         """
         # register a new user
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, User.json_schema())
@@ -62,7 +69,9 @@ class UserCollection(Resource):
             raise Conflict(description="Username or email already exists")
 
         response_data = user.serialize()
-        response_data["api_key"] = raw_api_key  # return api_key only when registered
+        response_data["api_key"] = (
+            raw_api_key  # return api_key only when registered
+        )
 
         return Response(
             json.dumps(response_data),
@@ -90,11 +99,15 @@ class UserItem(Resource):
         """
         # check user api key
         if request.current_user.id != user.id:
-            raise Forbidden(description="You can only update your own profile.")
+            raise Forbidden(
+                description="You can only update your own profile."
+            )
 
         # update user information including allergies
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, User.json_schema())
@@ -113,7 +126,9 @@ class UserItem(Resource):
         """
         # check user api key
         if request.current_user.id != user.id:
-            raise Forbidden(description="You can only delete your own account.")
+            raise Forbidden(
+                description="You can only delete your own account."
+            )
 
         # delete a user account
         db.session.delete(user)

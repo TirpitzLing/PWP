@@ -6,7 +6,13 @@ Handles adding, updating, and removing ingredients within a specific recipe.
 from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
-from werkzeug.exceptions import BadRequest, UnsupportedMediaType, NotFound, Conflict, Forbidden
+from werkzeug.exceptions import (
+    BadRequest,
+    UnsupportedMediaType,
+    NotFound,
+    Conflict,
+    Forbidden,
+)
 from api.extensions import db, api, cache
 from sqlalchemy.exc import IntegrityError
 from database.dbcreation import Ingredient, RecipeIngredient
@@ -32,10 +38,14 @@ class RecipeIngredientCollection(Resource):
         """
         # add a new ingredient to the recipe with amount
         if recipe.created_by != request.current_user.id:
-            raise Forbidden(description="You can only add ingredients to your own recipes.")
+            raise Forbidden(
+                description="You can only add ingredients to your own recipes."
+            )
 
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, RecipeIngredient.json_schema())
@@ -45,7 +55,9 @@ class RecipeIngredientCollection(Resource):
         # handle no existing ingredient error
         ingredient_id = request.json.get("ingredient_id")
         if not ingredient_id:
-            raise BadRequest(description="Missing ingredient_id in the request payload.")
+            raise BadRequest(
+                description="Missing ingredient_id in the request payload."
+            )
 
         ingredient = Ingredient.query.get_or_404(ingredient_id)
 
@@ -60,12 +72,19 @@ class RecipeIngredientCollection(Resource):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            raise Conflict(description="This ingredient has already been added to the recipe")
+            raise Conflict(
+                description="This ingredient has already been added to the recipe"
+            )
 
         cache.clear()
 
         return Response(
-            status=201, headers={"Location": api.url_for(RecipeIngredientItem, recipe=recipe, ingredient=ingredient)}
+            status=201,
+            headers={
+                "Location": api.url_for(
+                    RecipeIngredientItem, recipe=recipe, ingredient=ingredient
+                )
+            },
         )
 
 
@@ -79,21 +98,29 @@ class RecipeIngredientItem(Resource):
         Invalidates cache upon successful update.
         """
         if recipe.created_by != request.current_user.id:
-            raise Forbidden(description="You can only update ingredients in your own recipes.")
+            raise Forbidden(
+                description="You can only update ingredients in your own recipes."
+            )
 
         # update the amount and unit of an ingredient
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, RecipeIngredient.json_schema())
         except ValidationError as e:
             raise BadRequest(description=str(e))
 
-        assoc = RecipeIngredient.query.filter_by(recipe_id=recipe.id, ingredient_id=ingredient.id).first()
+        assoc = RecipeIngredient.query.filter_by(
+            recipe_id=recipe.id, ingredient_id=ingredient.id
+        ).first()
 
         if not assoc:
-            raise NotFound(description="Ingredient association not found in this recipe.")
+            raise NotFound(
+                description="Ingredient association not found in this recipe."
+            )
 
         assoc.deserialize(request.json)
         db.session.commit()
@@ -108,9 +135,13 @@ class RecipeIngredientItem(Resource):
         """
         # remove an ingredient from the recipe
         if recipe.created_by != request.current_user.id:
-            raise Forbidden(description="You can only delete ingredients from your own recipes.")
+            raise Forbidden(
+                description="You can only delete ingredients from your own recipes."
+            )
 
-        assoc = RecipeIngredient.query.filter_by(recipe_id=recipe.id, ingredient_id=ingredient.id).first()
+        assoc = RecipeIngredient.query.filter_by(
+            recipe_id=recipe.id, ingredient_id=ingredient.id
+        ).first()
 
         if assoc:
             db.session.delete(assoc)

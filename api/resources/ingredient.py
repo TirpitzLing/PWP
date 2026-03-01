@@ -36,7 +36,9 @@ class IngredientCollection(Resource):
         """
         # add a new ingredient to the database
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, Ingredient.json_schema())
@@ -51,7 +53,12 @@ class IngredientCollection(Resource):
 
         cache.clear()
 
-        return Response(status=201, headers={"Location": api.url_for(IngredientItem, ingredient=ingredient)})
+        return Response(
+            status=201,
+            headers={
+                "Location": api.url_for(IngredientItem, ingredient=ingredient)
+            },
+        )
 
 
 class IngredientItem(Resource):
@@ -72,7 +79,9 @@ class IngredientItem(Resource):
         """
         # update ingredient details
         if not request.json:
-            raise UnsupportedMediaType(description="Request payload must be JSON.")
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
 
         try:
             validate(request.json, Ingredient.json_schema())

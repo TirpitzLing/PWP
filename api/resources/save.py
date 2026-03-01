@@ -21,7 +21,9 @@ class SaveCollection(Resource):
         Retrieve a list of all saved recipes for a specific user.
         """
         if request.current_user.id != user.id:
-            raise Forbidden(description="You can only view your own saved recipes.")
+            raise Forbidden(
+                description="You can only view your own saved recipes."
+            )
 
         # list all saved recipes for this user
         return [s.serialize() for s in user.saved_recipes]
@@ -32,26 +34,41 @@ class SaveCollection(Resource):
         Save a specific recipe to the user's collection.
         """
         if request.current_user.id != user.id:
-            raise Forbidden(description="You can only save recipes to your own account.")
+            raise Forbidden(
+                description="You can only save recipes to your own account."
+            )
 
         # save a recipe for the user
         recipe_id = request.json.get("recipe_id")
         if not recipe_id:
-            raise BadRequest(description="Missing recipe_id in the request payload.")
+            raise BadRequest(
+                description="Missing recipe_id in the request payload."
+            )
 
         recipe = Recipe.query.get_or_404(recipe_id)
 
-        existing = Save.query.filter_by(user_id=user.id, recipe_id=recipe.id).first()
+        existing = Save.query.filter_by(
+            user_id=user.id, recipe_id=recipe.id
+        ).first()
 
         if existing:
             raise Conflict(description="Recipe already saved by this user")
 
-        new_save = Save(user_id=user.id, recipe_id=recipe.id, created_at=datetime.now(timezone.utc))
+        new_save = Save(
+            user_id=user.id,
+            recipe_id=recipe.id,
+            created_at=datetime.now(timezone.utc),
+        )
         db.session.add(new_save)
         db.session.commit()
 
         # successfully created
-        return Response(status=201, headers={"Location": api.url_for(SaveItem, user=user, recipe=recipe)})
+        return Response(
+            status=201,
+            headers={
+                "Location": api.url_for(SaveItem, user=user, recipe=recipe)
+            },
+        )
 
 
 class SaveItem(Resource):
@@ -63,10 +80,14 @@ class SaveItem(Resource):
         Remove a specific saved recipe from the user's collection.
         """
         if request.current_user.id != user.id:
-            raise Forbidden(description="You can only remove recipes from your own account.")
+            raise Forbidden(
+                description="You can only remove recipes from your own account."
+            )
 
         # remove a saved recipe
-        existing = Save.query.filter_by(user_id=user.id, recipe_id=recipe.id).first()
+        existing = Save.query.filter_by(
+            user_id=user.id, recipe_id=recipe.id
+        ).first()
 
         if existing:
             db.session.delete(existing)
