@@ -17,7 +17,6 @@ from database.dbcreation import Recipe, Ingredient, RecipeIngredient, User, Save
 
 from flask.testing import FlaskClient
 from werkzeug.datastructures import Headers
-import base64
 
 
 @pytest.fixture
@@ -94,16 +93,6 @@ class AuthHeaderClient(FlaskClient):
         return super().open(*args, **kwargs)
 
 
-def _get_auth_headers():
-    credentials = "test-user:test-password"
-    token = base64.b64encode(credentials.encode("utf-8")).decode("utf-8")
-    return {"Authorization": f"Basic {token}"}
-
-
-def _get_recipe_json(number=1):
-    return {"title": f"extra-recipe-{number}", "procedure": "Extra instructions", "created_by": 1}
-
-
 def _get_recipe_json(number=1):
     return {"title": f"extra-recipe-{number}", "procedure": "Extra instructions", "created_by": 1}
 
@@ -123,7 +112,6 @@ class TestRecipeCollection:
 
     def test_post_valid_request(self, client):
         valid = _get_recipe_json()
-        # add headers=_get_auth_headers() for id auth
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 201
 
@@ -138,8 +126,8 @@ class TestRecipeCollection:
         assert resp.status_code == 415
 
     def test_post_missing_field(self, client):
-        valid = _get_recipe_json()
-        valid.pop("instructions")
+        valid = _get_recipe_json()  # valid data
+        valid.pop("procedure")  # delete procedure field to test
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 400
 
@@ -183,9 +171,9 @@ class TestRecipeItem:
         resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 400
 
-    def test_put_name_conflict(self, client):
+    def test_put_title_conflict(self, client):
         valid = _get_recipe_json()
-        valid["name"] = "test-recipe-2"
+        valid["title"] = "test-recipe-2"
         resp = client.put(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 409
 
@@ -247,7 +235,7 @@ class TestSave:
         assert resp.status_code == 204
         resp = client.get(self.COLLECTION_URL)
         body = json.loads(resp.data)
-        assert all(r["name"] != "test-recipe-1" for r in body)
+        assert all(r["title"] != "test-recipe-1" for r in body)
 
 
 class TestUserCollection:
