@@ -7,7 +7,6 @@ python -m pytest api/test.py --cov=api --cov-report=term-missing
 
 from datetime import datetime
 import json
-import base64
 import pytest
 from werkzeug.security import generate_password_hash
 
@@ -130,6 +129,13 @@ class TestRecipeCollection:
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 400
 
+    def test_unauthorized(self, client):
+        valid = _get_recipe_json()
+        # input wrong api key
+        resp = client.post(self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "wrong-key"})
+        # should be 401 unauthorized
+        assert resp.status_code == 401
+
     # recipe title is not unique
     # def test_post_name_conflict(self, client):
     #     valid = _get_recipe_json()
@@ -181,6 +187,11 @@ class TestRecipeItem:
         assert resp.status_code == 204
         resp = client.get(self.RESOURCE_URL)
         assert resp.status_code == 404
+
+    def test_unauthorized(self, client):
+        valid = _get_recipe_json()
+        resp = client.put(self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "invalid-key"})
+        assert resp.status_code == 401
 
 
 class TestRecipeIngredient:
@@ -235,6 +246,10 @@ class TestSave:
         resp = client.get(self.COLLECTION_URL)
         body = json.loads(resp.data)
         assert all(r["title"] != "test-recipe-1" for r in body)
+
+    def test_unauthorized(self, client):
+        resp = client.post(self.COLLECTION_URL, json={"recipe_id": 1}, headers={"dbms-api-key": "wrong"})
+        assert resp.status_code == 401
 
 
 class TestUserCollection:
@@ -293,6 +308,11 @@ class TestUserItem:
         assert resp.status_code == 204
         # test if really deleted
         assert client.get(self.RESOURCE_URL).status_code == 404
+
+    def test_unauthorized(self, client):
+        valid = {"username": "hacker", "email": "hacker@test.com"}
+        resp = client.put(self.RESOURCE_URL, json=valid, headers={"dbms-api-key": "none"})
+        assert resp.status_code == 401
 
 
 class TestIngredientCollection:
