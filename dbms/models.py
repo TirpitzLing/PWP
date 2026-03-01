@@ -30,8 +30,12 @@ class User(db.Model):
 
     allergies = db.Column(db.Text, nullable=True)
 
-    recipes = db.relationship("Recipe", back_populates="creator")
-    saved_recipes = db.relationship("Save", back_populates="user")
+    recipes = db.relationship(
+        "Recipe", back_populates="creator", cascade="all, delete-orphan"
+    )
+    saved_recipes = db.relationship(
+        "Save", back_populates="user", cascade="all, delete-orphan"
+    )
     # ingredient_preferences = db.relationship(
     #     "UserIngredientPreference", back_populates="user"
     # )
@@ -62,11 +66,14 @@ class User(db.Model):
         # use PBKDF2 to slow down calculation
         self.pwd = generate_password_hash(doc["pwd"])
 
-        self.created_at = (
-            datetime.fromisoformat(doc["created_at"])
-            if doc.get("created_at")
-            else None
-        )
+        if "created_at" in doc:
+            self.created_at = datetime.fromisoformat(doc["created_at"])
+
+        # self.created_at = (
+        #     datetime.fromisoformat(doc["created_at"])
+        #     if doc.get("created_at")
+        #     else None
+        # )
 
         # optional
         self.allergies = doc.get("allergies")
@@ -118,6 +125,7 @@ class Ingredient(db.Model):
     recipe_links = db.relationship(
         "RecipeIngredient",
         back_populates="ingredient",
+        cascade="all, delete-orphan",
     )
 
     def serialize(self):
@@ -186,11 +194,14 @@ class Recipe(db.Model):
     ingredients = db.relationship(
         "RecipeIngredient",
         back_populates="recipe",
+        cascade="all, delete-orphan",
+    )
+    saved_by = db.relationship(
+        "Save", back_populates="recipe", cascade="all, delete-orphan"
     )
     # cooking_methods = db.relationship(
     #     "RecipeCookingMethod", back_populates="recipe"
     # )
-    saved_by = db.relationship("Save", back_populates="recipe")
 
     def serialize(self):
         return {
@@ -348,3 +359,80 @@ def init_db_command():
     """Clear the existing data and create new tables."""
     db.create_all()
     click.echo("Initialized the database.")
+
+
+@click.command("populate-db")
+@with_appcontext
+def populate_db_command():
+    """Populate the database with initial test data."""
+    # check if have data already
+    if User.query.first():
+        click.echo("Database already populated. Skipping...")
+        return
+
+    from datetime import datetime, timezone
+
+    # create admin user, print api key
+    test_key = "admin-secret-key"
+    admin = User(
+        username="admin",
+        email="admin@test.com",
+        pwd=generate_password_hash("admin123"),
+        created_at=datetime.now(timezone.utc),
+        api_key=User.hash_key(test_key),
+    )
+    db.session.add(admin)
+    db.session.commit()  # commit to get id
+
+    # create some ingredient
+    ing1 = Ingredient(
+        name="Tomato", calories=18.0, carbs=3.9, protein=0.9, fat=0.2
+    )
+    ing2 = Ingredient(
+        name="Egg", calories=155.0, carbs=1.1, protein=13.0, fat=11.0
+    )
+    ing3 = Ingredient(
+        name="Salt", calories=0.0, carbs=0.0, protein=0.0, fat=0.0
+    )
+    db.session.add_all([ing1, ing2, ing3])
+    db.session.commit()
+
+    # create a test recipe
+    recipe = Recipe(
+        title="Tomato Egg Stir-fry",
+        procedure="1. Chop tomatoes. 2. Beat eggs. 3. Fry together with salt.",
+        servings=2,
+        cuisine_type="Chinese",
+        created_at=datetime.now(timezone.utc),
+        created_by=admin.id,
+    )
+    db.session.add(recipe)
+    db.session.commit()
+
+    # add ing to recipe
+    db.session.add_all(
+        [
+            RecipeIngredient(
+                recipe_id=recipe.id,
+                ingredient_id=ing1.id,
+                amount=200,
+                unit="g",
+            ),
+            RecipeIngredient(
+                recipe_id=recipe.id,
+                ingredient_id=ing2.id,
+                amount=100,
+                unit="g",
+            ),
+            RecipeIngredient(
+                recipe_id=recipe.id, ingredient_id=ing3.id, amount=5, unit="g"
+            ),
+        ]
+    )
+    db.session.commit()
+
+    click.echo("Database populated successfully!")
+    click.echo("[*] Admin User created: 'admin'")
+    click.echo(
+        f"[*] Admin API Key: '{test_key}' (Use this in 'dbms-api-key' header)"
+    )
