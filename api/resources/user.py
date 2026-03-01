@@ -12,6 +12,7 @@ from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forb
 from api.extensions import db, api
 from database.dbcreation import User
 from api.auth import api_key_required
+import json
 
 
 class UserCollection(Resource):
@@ -58,7 +59,15 @@ class UserCollection(Resource):
         except IntegrityError:
             raise Conflict(description="Username or email already exists")
 
-        return Response(status=201, headers={"Location": api.url_for(UserItem, user=user)})
+        response_data = user.serialize()
+        response_data["api_key"] = user.api_key  # return api_key only when registered
+
+        return Response(
+            json.dumps(response_data),
+            status=201,
+            headers={"Location": api.url_for(UserItem, user=user)},
+            mimetype="application/json",
+        )
 
 
 class UserItem(Resource):

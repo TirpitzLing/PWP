@@ -51,7 +51,7 @@ class User(db.Model):
             "email": self.email,
             "created_at": self.created_at.isoformat(),
             "allergies": self.allergies,
-            "api_key": self.api_key,
+            # "api_key": self.api_key, # deleted for security
         }
 
     def deserialize(self, doc):
