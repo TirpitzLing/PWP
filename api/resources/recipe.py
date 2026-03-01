@@ -27,6 +27,7 @@ class RecipeCollection(Resource):
         recipes = Recipe.query.limit(limit).offset(offset).all()
         return [r.serialize() for r in recipes]
 
+    @api_key_required
     def post(self):
         """
         Create a new recipe in the system.
@@ -72,6 +73,7 @@ class RecipeItem(Resource):
         # get details of a specific recipe
         return recipe.serialize()
 
+    @api_key_required
     def put(self, recipe):
         """
         Update a specific recipe's details.
@@ -97,6 +99,7 @@ class RecipeItem(Resource):
 
         return Response(status=204)
 
+    @api_key_required
     def delete(self, recipe):
         """
         Delete a specific recipe from the system.

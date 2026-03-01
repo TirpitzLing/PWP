@@ -8,9 +8,10 @@ from flask import request, Response
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
-from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType
+from werkzeug.exceptions import Conflict, BadRequest, UnsupportedMediaType, Forbidden
 from api.extensions import db, api
 from database.dbcreation import User
+from api.auth import api_key_required
 
 
 class UserCollection(Resource):
@@ -71,10 +72,15 @@ class UserItem(Resource):
         # retrieve user profile
         return user.serialize()
 
+    @api_key_required
     def put(self, user):
         """
         Update user information including password, email, and allergies.
         """
+        # check user api key
+        if request.current_user.id != user.id:
+            raise Forbidden(description="You can only update your own profile.")
+
         # update user information including allergies
         if not request.json:
             raise UnsupportedMediaType(description="Request payload must be JSON.")
@@ -89,10 +95,15 @@ class UserItem(Resource):
 
         return Response(status=204)
 
+    @api_key_required
     def delete(self, user):
         """
         Delete a specific user account from the system.
         """
+        # check user api key
+        if request.current_user.id != user.id:
+            raise Forbidden(description="You can only delete your own account.")
+
         # delete a user account
         db.session.delete(user)
         db.session.commit()
