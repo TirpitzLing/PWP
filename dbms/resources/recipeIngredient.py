@@ -15,7 +15,7 @@ from werkzeug.exceptions import (
 )
 from dbms.extensions import db, api, cache
 from sqlalchemy.exc import IntegrityError
-from database.dbcreation import Ingredient, RecipeIngredient
+from dbms.models import Ingredient, RecipeIngredient
 from dbms.auth import api_key_required
 
 

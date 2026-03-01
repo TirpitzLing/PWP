@@ -12,7 +12,7 @@ from werkzeug.security import generate_password_hash
 
 from dbms.app import app
 from dbms.extensions import db
-from database.dbcreation import (
+from dbms.models import (
     Recipe,
     Ingredient,
     RecipeIngredient,

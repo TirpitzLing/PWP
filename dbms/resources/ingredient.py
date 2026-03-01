@@ -8,7 +8,7 @@ from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 from dbms.extensions import db, api, cache
-from database.dbcreation import Ingredient
+from dbms.models import Ingredient
 
 
 class IngredientCollection(Resource):

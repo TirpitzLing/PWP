@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from flask import request, Response
 from flask_restful import Resource
 from werkzeug.exceptions import BadRequest, Conflict, Forbidden
-from database.dbcreation import Recipe, Save
+from dbms.models import Recipe, Save
 from dbms.extensions import db, api
 from dbms.auth import api_key_required
 

@@ -6,7 +6,7 @@ Provides decorators to secure API endpoints using HTTP Basic Auth.
 from functools import wraps
 from flask import request
 from werkzeug.exceptions import Unauthorized
-from database.dbcreation import User
+from dbms.models import User
 
 
 def api_key_required(f):

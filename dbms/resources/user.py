@@ -16,7 +16,7 @@ from werkzeug.exceptions import (
     Forbidden,
 )
 from dbms.extensions import db, api
-from database.dbcreation import User
+from dbms.models import User
 from dbms.auth import api_key_required
 import json
 

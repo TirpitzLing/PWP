@@ -9,7 +9,7 @@ from werkzeug.exceptions import (
     Forbidden,
 )
 from dbms.extensions import db, api, cache
-from database.dbcreation import Recipe
+from dbms.models import Recipe
 
 from dbms.auth import api_key_required
 from datetime import datetime, timezone

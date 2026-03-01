@@ -7,7 +7,7 @@ from dbms.resources.save import SaveCollection, SaveItem
 from dbms.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
 from dbms.resources.ingredient import IngredientCollection, IngredientItem
 from dbms.resources.user import UserCollection, UserItem, UserRecipeCollection
-from database.dbcreation import (
+from dbms.models import (
     User,
     Ingredient,
     Recipe,
