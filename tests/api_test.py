@@ -155,7 +155,8 @@ class TestCLICommands:
     def test_cli(self, client):
         """
         Test the execution of database management CLI commands.
-        Forces the execution of data insertion logic by wiping the database first.
+        Forces the execution of data insertion logic by wiping the database
+        first.
         """
         runner = client.application.test_cli_runner()
         # init db
@@ -181,7 +182,10 @@ class TestRecipeCollection:
     RESOURCE_URL = "/api/recipes/"
 
     def test_get(self, client):
-        """Test retrieving a paginated list of recipes successfully (200 OK)."""
+        """
+        Test retrieving a paginated list of recipes successfully
+        (200 OK).
+        """
         resp = client.get(self.RESOURCE_URL)
         assert resp.status_code == 200
         body = json.loads(resp.data)
@@ -204,7 +208,8 @@ class TestRecipeCollection:
     def test_wrong_mediatype(self, client):
         """
         Test creating a recipe with an invalid media type.
-        Forces a 415 Unsupported Media Type error by sending plain text instead of JSON.
+        Forces a 415 Unsupported Media Type error by sending plain text
+        instead of JSON.
         """
         resp = client.post(
             self.RESOURCE_URL, data="not json", content_type="text/plain"
@@ -300,7 +305,8 @@ class TestRecipeItem:
     def test_put_forbidden(self, client):
         """
         Test updating a recipe created by another user.
-        Forces a 403 Forbidden error by using 'user2key' to edit User 1's recipe.
+        Forces a 403 Forbidden error by using 'user2key' to edit User 1's
+        recipe.
         """
         valid = _get_recipe_json()
         assert (
@@ -346,7 +352,10 @@ class TestRecipeItem:
 
 
 class TestRecipeIngredient:
-    """Tests for the RecipeIngredientCollection resource (/api/recipes/{id}/ingredients/)."""
+    """
+    Tests for the RecipeIngredientCollection resource
+    (/api/recipes/{id}/ingredients/).
+    """
 
     RESOURCE_URL = "/api/recipes/1/ingredients/"
 
@@ -359,7 +368,10 @@ class TestRecipeIngredient:
         assert len(body) == 1
 
     def test_post_valid_request(self, client):
-        """Test adding a new ingredient to a recipe successfully (201 Created)."""
+        """
+        Test adding a new ingredient to a recipe successfully
+        (201 Created).
+        """
         valid = {"ingredient_id": 2, "amount": 1.0, "unit": "g"}
         resp = client.post(self.RESOURCE_URL, json=valid)
         assert resp.status_code == 201
@@ -416,12 +428,18 @@ class TestRecipeIngredient:
 
 
 class TestRecipeIngredientItem:
-    """Tests for the RecipeIngredientItem resource (/api/recipes/{id}/ingredients/{id}/)."""
+    """
+    Tests for the RecipeIngredientItem resource
+    (/api/recipes/{id}/ingredients/{id}/).
+    """
 
     RESOURCE_URL = "/api/recipes/1/ingredients/1/"
 
     def test_put_success(self, client):
-        """Test updating the amount and unit of an ingredient successfully (204 No Content)."""
+        """
+        Test updating the amount and unit of an ingredient successfully
+        (204 No Content).
+        """
         assert (
             client.put(
                 self.RESOURCE_URL, json={"amount": 5.0, "unit": "kg"}
@@ -444,7 +462,8 @@ class TestRecipeIngredientItem:
     def test_put_missing_field(self, client):
         """
         Test updating an ingredient with invalid data types.
-        Forces a 400 Bad Request error by sending a string instead of a float for 'amount'.
+        Forces a 400 Bad Request error by sending a string instead of a float
+        for 'amount'.
         """
         assert (
             client.put(self.RESOURCE_URL, json={"amount": "str"}).status_code
@@ -465,8 +484,8 @@ class TestRecipeIngredientItem:
 
     def test_put_assoc_not_found(self, client):
         """
-        Test updating an ingredient that exists but is NOT linked to this recipe.
-        Forces a 404 Not Found error.
+        Test updating an ingredient that exists but is NOT linked to this
+        recipe. Forces a 404 Not Found error.
         """
         assert (
             client.put(
@@ -502,7 +521,10 @@ class TestRecipeIngredientItem:
         )
 
     def test_delete_success(self, client):
-        """Test deleting an ingredient from a recipe successfully (204 No Content)."""
+        """
+        Test deleting an ingredient from a recipe successfully
+        (204 No Content).
+        """
         assert client.delete(self.RESOURCE_URL).status_code == 204
 
     def test_delete_assoc_not_found(self, client):
@@ -516,7 +538,10 @@ class TestRecipeIngredientItem:
 
 
 class TestSave:
-    """Tests for the SaveCollection and SaveItem resources (/api/users/{id}/saves/)."""
+    """
+    Tests for the SaveCollection and SaveItem resources
+    (/api/users/{id}/saves/).
+    """
 
     COLLECTION_URL = "/api/users/1/saves/"
     ITEM_URL = "/api/users/1/saves/"
@@ -541,7 +566,10 @@ class TestSave:
         )
 
     def test_post_save(self, client):
-        """Test saving a recipe to the user's collection successfully (201 Created)."""
+        """
+        Test saving a recipe to the user's collection successfully
+        (201 Created).
+        """
         valid = {"recipe_id": 1}
         resp = client.post(self.COLLECTION_URL, json=valid)
         assert resp.status_code == 201
@@ -568,14 +596,18 @@ class TestSave:
         assert client.post(self.COLLECTION_URL, json={}).status_code == 400
 
     def test_delete_save(self, client):
-        """Test removing a saved recipe from the user's collection (204 No Content)."""
+        """
+        Test removing a saved recipe from the user's collection
+        (204 No Content).
+        """
         client.post(self.COLLECTION_URL, json={"recipe_id": 2})
         assert client.delete(self.ITEM_URL + "2/").status_code == 204
 
     def test_delete_save_not_found(self, client):
         """
         Test removing a saved recipe that the user has not saved yet.
-        Uses a valid Recipe ID (3) to bypass Converter 404, gracefully returning 204.
+        Uses a valid Recipe ID (3) to bypass Converter 404, gracefully
+        returning 204.
         """
         assert client.delete(self.ITEM_URL + "3/").status_code == 204
 
@@ -756,7 +788,9 @@ class TestUserItem:
 
 
 class TestUserRecipeCollection:
-    """Tests for the UserRecipeCollection resource (/api/users/{id}/recipes/)."""
+    """
+    Tests for the UserRecipeCollection resource (/api/users/{id}/recipes/).
+    """
 
     def test_get_user_recipes(self, client):
         """Test retrieving all recipes created by a specific user (200 OK)."""
@@ -839,7 +873,9 @@ class TestIngredientItem:
         assert client.get(self.INVALID_URL).status_code == 404
 
     def test_put_success(self, client):
-        """Test updating an ingredient's details successfully (204 No Content)."""
+        """
+        Test updating an ingredient's details successfully (204 No Content).
+        """
         assert (
             client.put(
                 self.RESOURCE_URL,
@@ -851,7 +887,8 @@ class TestIngredientItem:
     def test_put_invalid_type(self, client):
         """
         Test updating an ingredient with incorrect data types.
-        Forces a 400 Bad Request error by passing a string for a float field ('calories').
+        Forces a 400 Bad Request error by passing a string for
+        a float field ('calories').
         """
         assert (
             client.put(
@@ -875,15 +912,18 @@ class TestIngredientItem:
 
 
 class TestRecipeNutrition:
-    """Tests for the RecipeNutrition resource (/api/recipes/{id}/nutrition/)."""
+    """
+    Tests for the RecipeNutrition resource (/api/recipes/{id}/nutrition/).
+    """
 
     RESOURCE_URL = "/api/recipes/1/nutrition/"
     INVALID_URL = "/api/recipes/999/nutrition/"
 
     def test_get_nutrition_success(self, client):
         """
-        Test retrieving correct nutritional calculation results for a recipe (200 OK).
-        Ensures all key nutritional data points are returned in the payload.
+        Test retrieving correct nutritional calculation results for a recipe
+        (200 OK). Ensures all key nutritional data points are returned in the
+        payload.
         """
         resp = client.get(self.RESOURCE_URL)
         assert resp.status_code == 200
@@ -907,8 +947,9 @@ class TestSaveConverter:
     def test_save_converter(self, client):
         """
         Test routing converter logic for parsing and formatting save IDs.
-        Forces NotFound exceptions by providing malformed strings ("invalid-format")
-        and IDs pointing to non-existent database relations ("99-99").
+        Forces NotFound exceptions by providing malformed strings
+        ("invalid-format") and IDs pointing to non-existent database
+        relations ("99-99").
         """
         from dbms.converters import SaveConverter
         from werkzeug.routing import Map
@@ -927,7 +968,8 @@ class TestSaveConverter:
         # Test python obj -> url string conversion
         assert conv.to_url(obj) == "1-1"
 
-        # Force a 404 Not Found error by passing an incorrectly formatted string
+        # Force a 404 Not Found error by passing an incorrectly
+        # formatted string
         with pytest.raises(NotFound):
             conv.to_python("invalid-format")
 
