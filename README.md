@@ -78,7 +78,7 @@ Navigate to the root directory of the project, then run:
   python -m venv venv
   venv\Scripts\activate
   ```
-**Step 2: Install dependencies**
+  **Step 2: Install dependencies**
 
 After the virtual environment is set up and activated, run the following command under this directory to install all required packages:
 
@@ -108,8 +108,8 @@ Before running Flask commands, you need to tell the CLI where your application l
 * **Windows:**
   ```bash
   set FLASK_APP=dbms
-  ```  
-**Step 2: Initialize the database**
+  ```
+  **Step 2: Initialize the database**
 
 Run the custom CLI command to create the database and all necessary tables:
 
@@ -126,3 +126,12 @@ flask populate-db
 This will insert predefined users, ingredients, and recipes into the database for testing and development purposes.
 
 **Important:** When you run the `populate-db` command, the terminal will output an Admin API Key. Copy this key, as you will need it to authenticate requests when testing the API!
+
+# 4. How to Run the Test
+
+TL;DR: 
+```bash
+pip install pytest pytest-cov
+pytest tests/ -v --cov=dbms --cov-report=term-missing
+```
+More information about testing, please refer to this document: [Readme before test](tests/README.md)
