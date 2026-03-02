@@ -1,5 +1,11 @@
+"""
+Initialize the Daily Bowl Management System API.
+
+this module initializes the Flask app, extensions, blueprints, and configuration.
+"""
+
 import os
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from werkzeug.exceptions import HTTPException
@@ -12,9 +18,12 @@ from dbms.converters import (
     IngredientConverter,
     SaveConverter,
 )
+from dbms import models
+from dbms.api import api_bp
 
 
 def create_app(test_config=None):
+    """Create and configure an instance of the Flask application."""
     # init flask
     app = Flask(__name__, instance_relative_config=True)
 
@@ -40,22 +49,18 @@ def create_app(test_config=None):
     cache.init_app(app)
 
     @event.listens_for(Engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
+    def set_sqlite_pragma(dbapi_connection, _connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
     # swagger
-    SWAGGER_URL = "/api/docs"
-    API_URL = "/static/swagger.yaml"
+    swagger_url = "/api/docs"
+    api_url = "/static/schema/swagger.yaml"
     swaggerui_blueprint = get_swaggerui_blueprint(
-        SWAGGER_URL, API_URL, config={"app_name": "DBMS Recipe API"}
+        swagger_url, api_url, config={"app_name": "DBMS Recipe API"}
     )
-    app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
-
-    @app.route("/static/swagger.yaml")
-    def send_swagger():
-        return send_from_directory("static", "swagger.yaml")
+    app.register_blueprint(swaggerui_blueprint, url_prefix=swagger_url)
 
     # url map
     app.url_map.converters["recipe"] = RecipeConverter
@@ -63,15 +68,11 @@ def create_app(test_config=None):
     app.url_map.converters["ingredient"] = IngredientConverter
     app.url_map.converters["save"] = SaveConverter
 
-    from dbms import models
-
     # CLI cmd
     app.cli.add_command(models.init_db_command)
     app.cli.add_command(models.populate_db_command)
 
     # register blueprint
-    from dbms.api import api_bp
-
     app.register_blueprint(api_bp)
 
     @app.errorhandler(HTTPException)

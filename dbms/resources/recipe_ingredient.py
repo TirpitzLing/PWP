@@ -3,21 +3,21 @@ API resources for managing recipe ingredients.
 Handles adding, updating, and removing ingredients within a specific recipe.
 """
 
-from flask import request, Response
+from flask import Response, request, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
+from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import (
     BadRequest,
-    UnsupportedMediaType,
-    NotFound,
     Conflict,
     Forbidden,
+    NotFound,
+    UnsupportedMediaType,
 )
-from dbms.extensions import db, cache
-from sqlalchemy.exc import IntegrityError
-from dbms.models import Ingredient, RecipeIngredient
+
 from dbms.auth import api_key_required
-from flask import url_for
+from dbms.extensions import cache, db
+from dbms.models import Ingredient, RecipeIngredient
 
 
 class RecipeIngredientCollection(Resource):
@@ -54,7 +54,7 @@ class RecipeIngredientCollection(Resource):
         try:
             validate(request.json, RecipeIngredient.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         # handle no existing ingredient error
         ingredient_id = request.json.get("ingredient_id")
@@ -74,12 +74,12 @@ class RecipeIngredientCollection(Resource):
         try:
             db.session.add(assoc)
             db.session.commit()
-        except IntegrityError:
+        except IntegrityError as exc:
             db.session.rollback()
             raise Conflict(
                 description="This ingredient has already been added to the "
                 "recipe"
-            )
+            ) from exc
 
         cache.clear()
 
@@ -119,7 +119,7 @@ class RecipeIngredientItem(Resource):
         try:
             validate(request.json, RecipeIngredient.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         assoc = RecipeIngredient.query.filter_by(
             recipe_id=recipe.id, ingredient_id=ingredient.id

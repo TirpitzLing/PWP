@@ -1,4 +1,11 @@
-from flask import request, Response
+"""
+API resources for managing recipes.
+handles CRUD operations for recipes, as well as calculating nutritional information.
+"""
+
+from datetime import datetime, timezone
+
+from flask import Response, request, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 
@@ -6,21 +13,18 @@ from jsonschema import validate, ValidationError
 from werkzeug.exceptions import (
     # Conflict,
     BadRequest,
-    UnsupportedMediaType,
     Forbidden,
+    UnsupportedMediaType,
 )
-from dbms.extensions import db, cache
-from dbms.models import Recipe
-from flask import url_for
 
 from dbms.auth import api_key_required
-from datetime import datetime, timezone
+from dbms.extensions import cache, db
+from dbms.models import Recipe
 
 
 class RecipeCollection(Resource):
     """Resource for managing a collection of recipes."""
 
-    # TODO filtering by attributes
     @cache.cached(timeout=None, query_string=True)
     def get(self):
         """
@@ -51,7 +55,7 @@ class RecipeCollection(Resource):
         try:
             validate(request.json, Recipe.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         recipe = Recipe()
         recipe.deserialize(request.json)
@@ -107,7 +111,7 @@ class RecipeItem(Resource):
         try:
             validate(request.json, Recipe.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         recipe.deserialize(request.json)
         db.session.commit()

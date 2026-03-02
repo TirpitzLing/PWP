@@ -1,9 +1,13 @@
+"""
+This module defines the API blueprint and registers the API resources.
+"""
+
 from flask import Blueprint
 from flask_restful import Api
 from dbms.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
 from dbms.resources.ingredient import IngredientCollection, IngredientItem
 from dbms.resources.user import UserCollection, UserItem, UserRecipeCollection
-from dbms.resources.recipeIngredient import (
+from dbms.resources.recipe_ingredient import (
     RecipeIngredientCollection,
     RecipeIngredientItem,
 )

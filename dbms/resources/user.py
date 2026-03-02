@@ -4,22 +4,23 @@ Handles user registration, profile updates, account deletion,
 and fetching user recipes.
 """
 
+import json
 from datetime import datetime, timezone
-from flask import request, Response
+
+from flask import Response, request, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import (
-    Conflict,
     BadRequest,
-    UnsupportedMediaType,
+    Conflict,
     Forbidden,
+    UnsupportedMediaType,
 )
+
+from dbms.auth import api_key_required
 from dbms.extensions import db
 from dbms.models import User
-from dbms.auth import api_key_required
-import json
-from flask import url_for
 
 
 class UserCollection(Resource):
@@ -53,7 +54,7 @@ class UserCollection(Resource):
         try:
             validate(request.json, User.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         user = User()
         # get plain api key, first time register, generate a key and
@@ -68,8 +69,10 @@ class UserCollection(Resource):
         try:
             db.session.add(user)
             db.session.commit()
-        except IntegrityError:
-            raise Conflict(description="Username or email already exists")
+        except IntegrityError as exc:
+            raise Conflict(
+                description="Username or email already exists"
+            ) from exc
 
         response_data = user.serialize()
         response_data["api_key"] = (
@@ -115,14 +118,16 @@ class UserItem(Resource):
         try:
             validate(request.json, User.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         user.deserialize(request.json)
         try:
             db.session.commit()
-        except IntegrityError:
+        except IntegrityError as exc:
             db.session.rollback()
-            raise Conflict(description="Username or email already exists")
+            raise Conflict(
+                description="Username or email already exists"
+            ) from exc
 
         return Response(status=204)
 

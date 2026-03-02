@@ -1,13 +1,25 @@
-from datetime import datetime
-from werkzeug.security import generate_password_hash
+"""
+Database models for the Daily Bowl Management System.
+
+This module defines the SQLAlchemy models for User, Ingredient, Recipe,
+RecipeIngredient, and Save, along with their serialization and validation logic.
+it also includes CLI commands for database initialization and population.
+"""
+
 import secrets
 import hashlib
-from dbms.extensions import db
+from datetime import datetime, timezone
+
 import click
 from flask.cli import with_appcontext
+from werkzeug.security import generate_password_hash
+
+from dbms.extensions import db
 
 
 class User(db.Model):
+    """Represents a user of the application."""
+
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +56,7 @@ class User(db.Model):
     api_key = db.Column(db.String(128), unique=True, nullable=False)
 
     def serialize(self):
+        """Serialize the User object to a dictionary."""
         return {
             "id": self.id,
             "username": self.username,
@@ -55,10 +68,15 @@ class User(db.Model):
 
     @staticmethod
     def hash_key(token):
-        """hashing api key"""
+        """Hash the given API key token for storage."""
         return hashlib.sha256(token.encode()).hexdigest()
 
     def deserialize(self, doc):
+        """
+        Deserialize data from a dictionary to the User object.
+
+        Returns the raw API token if a new one is generated.
+        """
         # mandatory
         self.username = doc["username"]
         self.email = doc["email"]
@@ -87,6 +105,7 @@ class User(db.Model):
 
     @staticmethod
     def json_schema():
+        """Return the JSON schema for User validation."""
         return {
             "type": "object",
             "required": [
@@ -109,6 +128,8 @@ class User(db.Model):
 
 
 class Ingredient(db.Model):
+    """Represents a single cooking ingredient."""
+
     __tablename__ = "ingredients"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -129,6 +150,7 @@ class Ingredient(db.Model):
     )
 
     def serialize(self):
+        """Serialize the Ingredient object to a dictionary."""
         return {
             "id": self.id,
             "name": self.name,
@@ -141,6 +163,7 @@ class Ingredient(db.Model):
         }
 
     def deserialize(self, doc):
+        """Deserialize data from a dictionary to the Ingredient object."""
         self.name = doc["name"]
         self.img_url = doc.get("img_url")
         self.allergy = doc.get("allergy")
@@ -151,6 +174,7 @@ class Ingredient(db.Model):
 
     @staticmethod
     def json_schema():
+        """Return the JSON schema for Ingredient validation."""
         schema = {
             "type": "object",
             "required": ["name"],
@@ -173,6 +197,8 @@ class Ingredient(db.Model):
 
 
 class Recipe(db.Model):
+    """Represents a cooking recipe."""
+
     __tablename__ = "recipes"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -204,6 +230,7 @@ class Recipe(db.Model):
     # )
 
     def serialize(self):
+        """Serialize the Recipe object to a dictionary."""
         return {
             "id": self.id,
             "title": self.title,
@@ -216,6 +243,7 @@ class Recipe(db.Model):
         }
 
     def deserialize(self, doc):
+        """Deserialize data from a dictionary to the Recipe object."""
         self.title = doc["title"]
         self.procedure = doc.get("procedure")
         self.servings = doc.get("servings")
@@ -228,6 +256,7 @@ class Recipe(db.Model):
 
     @staticmethod
     def json_schema():
+        """Return the JSON schema for Recipe validation."""
         schema = {
             "type": "object",
             "required": ["title", "created_by"],
@@ -253,6 +282,8 @@ class Recipe(db.Model):
 
 
 class RecipeIngredient(db.Model):
+    """Association object between Recipe and Ingredient."""
+
     __tablename__ = "recipe_ingredients"
 
     recipe_id = db.Column(
@@ -276,6 +307,7 @@ class RecipeIngredient(db.Model):
     )
 
     def serialize(self):
+        """Serialize the RecipeIngredient object to a dictionary."""
         return {
             "recipe_id": self.recipe_id,
             "ingredient_id": self.ingredient_id,
@@ -284,11 +316,13 @@ class RecipeIngredient(db.Model):
         }
 
     def deserialize(self, doc):
+        """Deserialize data from a dictionary to the RecipeIngredient object."""
         self.amount = doc.get("amount")
         self.unit = doc.get("unit")
 
     @staticmethod
     def json_schema():
+        """Return the JSON schema for RecipeIngredient validation."""
         schema = {
             "type": "object",
             "required": [],
@@ -305,6 +339,8 @@ class RecipeIngredient(db.Model):
 
 
 class Save(db.Model):
+    """Represents a user saving a recipe (a 'like' or 'favorite')."""
+
     __tablename__ = "save"
 
     user_id = db.Column(
@@ -323,6 +359,7 @@ class Save(db.Model):
     recipe = db.relationship("Recipe", back_populates="saved_by")
 
     def serialize(self):
+        """Serialize the Save object to a dictionary."""
         return {
             "user_id": self.user_id,
             "recipe_id": self.recipe_id,
@@ -330,11 +367,13 @@ class Save(db.Model):
         }
 
     def deserialize(self, doc):
+        """Deserialize data from a dictionary to the Save object."""
         if "created_at" in doc:
             self.created_at = datetime.fromisoformat(doc["created_at"])
 
     @staticmethod
     def json_schema():
+        """Return the JSON schema for Save validation."""
         schema = {
             "type": "object",
             "required": [],
@@ -369,8 +408,6 @@ def populate_db_command():
     if User.query.first():
         click.echo("Database already populated. Skipping...")
         return
-
-    from datetime import datetime, timezone
 
     # create admin user, print api key
     test_key = "admin-secret-key"

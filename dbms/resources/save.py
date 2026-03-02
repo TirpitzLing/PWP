@@ -4,13 +4,14 @@ Handles bookmarking recipes for users and removing them from saved collections.
 """
 
 from datetime import datetime, timezone
-from flask import request, Response
+
+from flask import Response, request, url_for
 from flask_restful import Resource
 from werkzeug.exceptions import BadRequest, Conflict, Forbidden
-from dbms.models import Recipe, Save
-from dbms.extensions import db
+
 from dbms.auth import api_key_required
-from flask import url_for
+from dbms.extensions import db
+from dbms.models import Recipe, Save
 
 
 class SaveCollection(Resource):

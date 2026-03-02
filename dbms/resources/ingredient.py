@@ -3,13 +3,13 @@ API resources for managing ingredients.
 Handles CRUD operations for ingredients.
 """
 
-from flask import request, Response
+from flask import Response, request, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
-from dbms.extensions import db, cache
+
+from dbms.extensions import cache, db
 from dbms.models import Ingredient
-from flask import url_for
 
 
 class IngredientCollection(Resource):
@@ -44,7 +44,7 @@ class IngredientCollection(Resource):
         try:
             validate(request.json, Ingredient.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         ingredient = Ingredient()
         ingredient.deserialize(request.json)
@@ -89,7 +89,7 @@ class IngredientItem(Resource):
         try:
             validate(request.json, Ingredient.json_schema())
         except ValidationError as e:
-            raise BadRequest(description=str(e))
+            raise BadRequest(description=str(e)) from e
 
         ingredient.deserialize(request.json)
         db.session.commit()
