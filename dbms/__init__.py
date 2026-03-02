@@ -19,6 +19,7 @@ from dbms.converters import (
     SaveConverter,
 )
 from dbms import models
+from dbms import cli as clipy
 from dbms.api import api_bp
 
 
@@ -71,8 +72,8 @@ def create_app(test_config=None):
     app.url_map.converters["save"] = SaveConverter
 
     # CLI cmd
-    app.cli.add_command(models.init_db_command)
-    app.cli.add_command(models.populate_db_command)
+    app.cli.add_command(clipy.init_db_command)
+    app.cli.add_command(clipy.populate_db_command)
 
     # register blueprint
     app.register_blueprint(api_bp)
