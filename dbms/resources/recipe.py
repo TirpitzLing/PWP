@@ -46,7 +46,7 @@ class RecipeCollection(Resource):
     def post(self):
         """
         Create a new recipe in the system.
-        Requires HTTP Basic Authentication.
+        Requires API-key auth.
         Invalidates cache upon successful creation.
         """
         # create a new recipe
@@ -99,7 +99,7 @@ class RecipeItem(Resource):
     def put(self, recipe):
         """
         Update a specific recipe's details.
-        Requires HTTP Basic Authentication.
+        Requires API-key auth.
         Invalidates cache upon successful update.
         """
         # update a recipe
@@ -129,7 +129,7 @@ class RecipeItem(Resource):
     def delete(self, recipe):
         """
         Delete a specific recipe from the system.
-        Requires HTTP Basic Authentication.
+        Requires API-key auth.
         Invalidates cache upon successful deletion.
         """
         if recipe.created_by != request.current_user.id:

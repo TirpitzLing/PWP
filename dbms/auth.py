@@ -1,6 +1,6 @@
 """
 Authentication module for the API.
-Provides decorators to secure API endpoints using HTTP Basic Auth.
+Provides decorators to secure API endpoints using API key Auth.
 """
 
 from functools import wraps
