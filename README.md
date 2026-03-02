@@ -144,7 +144,7 @@ Start the RESTful API by running the following command:
 flask run
 ```
 
-This will boot up the Flask application, connect to the database in your `instance/` folder, and start listening for incoming HTTP requests. By default, the server will run on port 5000.
+This will boot up the Flask application, connect to the database in your `instance/` folder, and start listening for incoming HTTP requests.
 
 # 5. The URL to access the API
 
