@@ -29,6 +29,7 @@ def create_app(test_config=None):
 
     if test_config is None:
         db_path = os.path.join(app.instance_path, "dbms.db")
+        # cache config comes from lovelace material
         app.config.from_mapping(
             SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
@@ -45,6 +46,7 @@ def create_app(test_config=None):
         pass
 
     # init extensions
+    # The init of the cache comes from lovelace
     db.init_app(app)
     cache.init_app(app)
 

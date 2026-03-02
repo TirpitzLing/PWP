@@ -10,6 +10,8 @@ from dbms.models import User
 
 
 def api_key_required(f):
+    # The decorator is based on
+    # the 'require_admin' and 'require_sensor_key' decorators from lovelace
     """
     Decorator to require API Key Authentication for an API endpoint.
     Checks the 'dbms-api-key' header and verifies credentials against the

@@ -53,6 +53,8 @@ class User(db.Model):
     # )
     # allergies = db.relationship("UserAllergy", back_populates="user")
 
+    # The API key implementation is based on lovelace
+    # material on API key authentication.
     api_key = db.Column(db.String(128), unique=True, nullable=False)
 
     def serialize(self):
@@ -68,6 +70,7 @@ class User(db.Model):
 
     @staticmethod
     def hash_key(token):
+        # This method for hashing the API key is based on lovelace material
         """Hash the given API key token for storage."""
         return hashlib.sha256(token.encode()).hexdigest()
 
@@ -96,6 +99,8 @@ class User(db.Model):
         # optional
         self.allergies = doc.get("allergies")
 
+        # The logic to generate a strong token using `secrets` module
+        # is based on lovelace material.
         # generate api_key, store hash but return plain
         if not self.api_key:
             raw_token = secrets.token_hex(32)
@@ -249,7 +254,6 @@ class Recipe(db.Model):
         self.servings = doc.get("servings")
         self.cuisine_type = doc.get("cuisine_type")
         self.cooking_methods = doc.get("cooking_methods")
-        self.created_by = doc["created_by"]
 
         if "created_at" in doc:
             self.created_at = datetime.fromisoformat(doc["created_at"])
@@ -259,7 +263,7 @@ class Recipe(db.Model):
         """Return the JSON schema for Recipe validation."""
         schema = {
             "type": "object",
-            "required": ["title", "created_by"],
+            "required": ["title"],
         }
 
         props = schema["properties"] = {}
@@ -408,6 +412,9 @@ def populate_db_command():
     if User.query.first():
         click.echo("Database already populated. Skipping...")
         return
+
+    # The following creation of an admin user with a pre-defined API key
+    # is based on lovelace material.
 
     # create admin user, print api key
     test_key = "admin-secret-key"

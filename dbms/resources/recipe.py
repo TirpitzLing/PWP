@@ -25,6 +25,9 @@ from dbms.models import Recipe
 class RecipeCollection(Resource):
     """Resource for managing a collection of recipes."""
 
+    # The decorator caches the response of the GET method.
+    # The use of @cache.cached and `query_string=True` comes from
+    # lovelace
     @cache.cached(timeout=None, query_string=True)
     def get(self):
         """
@@ -63,7 +66,7 @@ class RecipeCollection(Resource):
         # automatically link to the current user
         recipe.created_by = request.current_user.id
 
-        # automatically set created_at
+        # automatically set created_at if not provided
         if not recipe.created_at:
             recipe.created_at = datetime.now(timezone.utc)
 
@@ -71,6 +74,8 @@ class RecipeCollection(Resource):
         db.session.add(recipe)
         db.session.commit()
 
+        # As the material, the cache is cleared after a modification
+        # to avoid returning stale data.
         cache.clear()
 
         return Response(
