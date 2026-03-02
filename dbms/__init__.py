@@ -23,7 +23,10 @@ from dbms.api import api_bp
 
 
 def create_app(test_config=None):
-    """Create and configure an instance of the Flask application."""
+    """
+    Create and configure an instance of the Flask application.
+    As recommended in the layout section
+    """
     # init flask
     app = Flask(__name__, instance_relative_config=True)
 
@@ -46,10 +49,11 @@ def create_app(test_config=None):
         pass
 
     # init extensions
-    # The init of the cache comes from lovelace
     db.init_app(app)
     cache.init_app(app)
 
+    # activate foreign key(for sqlite)
+    # ref: https://stackoverflow.com/questions/13712381/how-to-turn-on-pragma-foreign-keys-on-in-sqlalchemy-migration-script-or-conf
     @event.listens_for(Engine, "connect")
     def set_sqlite_pragma(dbapi_connection, _connection_record):
         cursor = dbapi_connection.cursor()
@@ -57,6 +61,7 @@ def create_app(test_config=None):
         cursor.close()
 
     # swagger
+    # ref: AI guided
     swagger_url = "/api/docs"
     api_url = "/static/schema/swagger.yaml"
     swaggerui_blueprint = get_swaggerui_blueprint(
@@ -70,13 +75,16 @@ def create_app(test_config=None):
     app.url_map.converters["ingredient"] = IngredientConverter
     app.url_map.converters["save"] = SaveConverter
 
+    # ref: lovelace Flask API Project Layout
     # CLI cmd
     app.cli.add_command(models.init_db_command)
     app.cli.add_command(models.populate_db_command)
 
-    # register blueprint
+    # register blueprint (common prefix)
     app.register_blueprint(api_bp)
 
+    # intercept all http exceptions and return in a json format
+    # ref: https://flask.palletsprojects.com/en/stable/errorhandling/
     @app.errorhandler(HTTPException)
     def handle_exception(e):
         return (

@@ -70,7 +70,7 @@ class User(db.Model):
 
     @staticmethod
     def hash_key(token):
-        # This method for hashing the API key is based on lovelace material
+        # ref: This method for hashing the API key is based on lovelace material
         """Hash the given API key token for storage."""
         return hashlib.sha256(token.encode()).hexdigest()
 
