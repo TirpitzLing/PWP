@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name, import-error
 """
 Comprehensive Automated Test Suite for the Flask RESTful API.
 
@@ -8,14 +9,18 @@ python -m pytest api/test.py --cov=api --cov-report=term-missing
 import os
 import tempfile
 import json
-import pytest
 import warnings
 from datetime import datetime
-from werkzeug.security import generate_password_hash
-from werkzeug.datastructures import Headers
+
+import pytest
 from flask.testing import FlaskClient
+from werkzeug.datastructures import Headers
+from werkzeug.exceptions import NotFound
+from werkzeug.routing import Map
+from werkzeug.security import generate_password_hash
 
 from dbms import create_app
+from dbms.converters import SaveConverter
 from dbms.extensions import db
 from dbms.models import Recipe, Ingredient, RecipeIngredient, User, Save
 
@@ -149,7 +154,7 @@ def test_create_app_no_config():
     assert "sqlite" in app.config["SQLALCHEMY_DATABASE_URI"]
 
 
-class TestCLICommands:
+class TestCLICommands:  # pylint: disable=R0903
     """Tests for Custom Flask CLI commands (init-db and populate-db)."""
 
     def test_cli(self, client):
@@ -941,7 +946,7 @@ class TestRecipeNutrition:
         assert client.get(self.INVALID_URL).status_code == 404
 
 
-class TestSaveConverter:
+class TestSaveConverter:  # pylint: disable=R0903
     """Tests for the custom SaveConverter routing logic."""
 
     def test_save_converter(self, client):
@@ -951,10 +956,6 @@ class TestSaveConverter:
         ("invalid-format") and IDs pointing to non-existent database
         relations ("99-99").
         """
-        from dbms.converters import SaveConverter
-        from werkzeug.routing import Map
-        from werkzeug.exceptions import NotFound
-
         conv = SaveConverter(Map())
 
         # Create a save resource first to test successful extraction

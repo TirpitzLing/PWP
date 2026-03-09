@@ -66,7 +66,9 @@ def create_app(test_config=None):
     swagger_url = "/api/docs"
     api_url = "/static/schema/swagger.yaml"
     swaggerui_blueprint = get_swaggerui_blueprint(
-        swagger_url, api_url, config={"app_name": "DBMS Recipe API"}
+        swagger_url,
+        api_url,
+        config={"app_name": "DBMS Recipe API"},
     )
     app.register_blueprint(swaggerui_blueprint, url_prefix=swagger_url)
 

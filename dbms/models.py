@@ -8,7 +8,7 @@ it also includes CLI commands for database initialization and population.
 
 import secrets
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from werkzeug.security import generate_password_hash
 
 from dbms.extensions import db

@@ -1,11 +1,13 @@
-# dbms/cli.py
+"""CLI commands for the DBMS application."""
+
+from datetime import datetime, timezone
+
 import click
 from flask.cli import with_appcontext
-from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 
 from dbms.extensions import db
-from dbms.models import User, Ingredient, Recipe, RecipeIngredient, Save
+from dbms.models import User, Ingredient, Recipe, RecipeIngredient
 
 
 @click.command("init-db")
