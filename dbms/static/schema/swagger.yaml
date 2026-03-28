@@ -6,9 +6,9 @@ info:
     description: |
         This is an API for managing users, recipes, ingredients, and nutrition.
         It is used in the Programmable Web Project course.
-    termsOfService: http://totally.not.placehold.er/
+    # termsOfService: http://totally.not.placehold.er/
     contact:
-        url: http://totally.not.placehold.er/
+        # url: http://totally.not.placehold.er/
         email: azhou25@student.oulu.fi, tliu25@student.oulu.fi, jling25@student.oulu.fi
     license:
         name: Apache 2.0
@@ -194,6 +194,15 @@ paths:
                   required: true
                   schema:
                       type: integer
+            responses:
+                "200":
+                    description: A user profile
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/User"
+                "404":
+                    description: Not Found
         put:
             tags: [Users]
             summary: Update user profile
@@ -229,6 +238,8 @@ paths:
                     description: Unauthorized
                 "403":
                     description: Forbidden (Not your account)
+                "404":
+                    description: Not Found
                 "409":
                     description: Conflict
                 "415":
@@ -251,6 +262,8 @@ paths:
                     description: Unauthorized
                 "403":
                     description: Forbidden
+                "404":
+                    description: Not Found
 
     /api/users/{user}/recipes/:
         get:
@@ -271,6 +284,8 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Recipe"
+                "404":
+                    description: Not Found
 
     # ---------------- SAVES ----------------
     /api/users/{user}/saves/:
@@ -296,6 +311,8 @@ paths:
                                     $ref: "#/components/schemas/Save"
                 "403":
                     description: Forbidden
+                "404":
+                    description: Not Found
         post:
             tags: [Saves]
             summary: Save a recipe to collection
@@ -351,6 +368,8 @@ paths:
                     description: Save removed successfully
                 "403":
                     description: Forbidden
+                "404":
+                    description: Not Found
 
     # ---------------- RECIPES ----------------
     /api/recipes/:
@@ -403,6 +422,8 @@ paths:
                     description: Recipe created
                 "400":
                     description: Bad Request
+                "401":
+                    description: Unauthorized
                 "415":
                     description: Unsupported Media Type
 
@@ -423,6 +444,8 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/Recipe"
+                "404":
+                    description: Not Found
         put:
             tags: [Recipes]
             summary: Update a recipe
@@ -454,6 +477,8 @@ paths:
                     description: Bad Request
                 "403":
                     description: Forbidden
+                "404":
+                    description: Not Found
                 "415":
                     description: Unsupported Media Type
         delete:
@@ -472,6 +497,8 @@ paths:
                     description: Deleted successfully
                 "403":
                     description: Forbidden
+                "404":
+                    description: Not Found
 
     /api/recipes/{recipe}/nutrition/:
         get:
@@ -499,6 +526,8 @@ paths:
                                         type: number
                                     total_fat:
                                         type: number
+                "404":
+                    description: Not Found
 
     # ---------------- INGREDIENTS ----------------
     /api/ingredients/:
@@ -571,6 +600,8 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/Ingredient"
+                "404":
+                    description: Not Found
         put:
             tags: [Ingredients]
             summary: Update ingredient details
@@ -596,6 +627,8 @@ paths:
                     description: Updated successfully
                 "400":
                     description: Bad Request
+                "404":
+                    description: Not Found
                 "415":
                     description: Unsupported Media Type
 
@@ -619,6 +652,8 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/RecipeIngredient"
+                "404":
+                    description: Not Found
         post:
             tags: [Recipe Ingredients]
             summary: Add an ingredient to a recipe
@@ -718,3 +753,5 @@ paths:
                     description: Removed successfully
                 "403":
                     description: Forbidden
+                "404":
+                    description: Not Found
