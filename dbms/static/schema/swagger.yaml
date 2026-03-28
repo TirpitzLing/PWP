@@ -1,10 +1,20 @@
-openapi: 3.0.3
+---
+openapi: 3.0.4
 info:
-    title: DBMS Recipe API
-    description: RESTful API for managing users, recipes, ingredients, and nutrition.
+    title: Daily Bowl Management System API
     version: 1.0.0
+    description: |
+        This is an API for managing users, recipes, ingredients, and nutrition.
+        It is used in the Programmable Web Project course.
+    termsOfService: http://totally.not.placehold.er/
+    contact:
+        url: http://totally.not.placehold.er/
+        email: azhou25@student.oulu.fi, tliu25@student.oulu.fi, jling25@student.oulu.fi
+    license:
+        name: Apache 2.0
+        url: https://www.apache.org/licenses/LICENSE-2.0.html
 servers:
-    - url: /
+    - url: /api
       description: Local Server
 
 components:
@@ -148,10 +158,31 @@ paths:
                         Location:
                             schema:
                                 type: string
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: integer
+                                    username:
+                                        type: string
+                                    email:
+                                        type: string
+                                    created_at:
+                                        type: string
+                                        format: date-time
+                                    allergies:
+                                        type: string
+                                        nullable: true
+                                    api_key:
+                                        type: string
                 "400":
                     description: Bad request (validation error)
                 "409":
                     description: Username or email already exists
+                "415":
+                    description: Unsupported Media Type
 
     /api/users/{user}/:
         get:
@@ -192,10 +223,16 @@ paths:
             responses:
                 "204":
                     description: User updated successfully
+                "400":
+                    description: Bad Request
                 "401":
                     description: Unauthorized
                 "403":
                     description: Forbidden (Not your account)
+                "409":
+                    description: Conflict
+                "415":
+                    description: Unsupported Media Type
         delete:
             tags: [Users]
             summary: Delete user account
@@ -235,7 +272,7 @@ paths:
                                 items:
                                     $ref: "#/components/schemas/Recipe"
 
-    # ---------------- SAVES (Bookmarks) ----------------
+    # ---------------- SAVES ----------------
     /api/users/{user}/saves/:
         get:
             tags: [Saves]
@@ -283,6 +320,12 @@ paths:
             responses:
                 "201":
                     description: Recipe saved
+                "400":
+                    description: Bad Request
+                "403":
+                    description: Forbidden
+                "404":
+                    description: Not Found
                 "409":
                     description: Recipe already saved
 
@@ -306,6 +349,8 @@ paths:
             responses:
                 "204":
                     description: Save removed successfully
+                "403":
+                    description: Forbidden
 
     # ---------------- RECIPES ----------------
     /api/recipes/:
@@ -356,6 +401,10 @@ paths:
             responses:
                 "201":
                     description: Recipe created
+                "400":
+                    description: Bad Request
+                "415":
+                    description: Unsupported Media Type
 
     /api/recipes/{recipe}/:
         get:
@@ -401,8 +450,12 @@ paths:
             responses:
                 "204":
                     description: Updated successfully
+                "400":
+                    description: Bad Request
                 "403":
                     description: Forbidden
+                "415":
+                    description: Unsupported Media Type
         delete:
             tags: [Recipes]
             summary: Delete a recipe
@@ -475,8 +528,6 @@ paths:
         post:
             tags: [Ingredients]
             summary: Add a new ingredient to database
-            security:
-                - ApiKeyAuth: []
             requestBody:
                 required: true
                 content:
@@ -498,6 +549,10 @@ paths:
             responses:
                 "201":
                     description: Ingredient created
+                "400":
+                    description: Bad Request
+                "415":
+                    description: Unsupported Media Type
 
     /api/ingredients/{ingredient}/:
         get:
@@ -519,8 +574,6 @@ paths:
         put:
             tags: [Ingredients]
             summary: Update ingredient details
-            security:
-                - ApiKeyAuth: []
             parameters:
                 - name: ingredient
                   in: path
@@ -541,6 +594,10 @@ paths:
             responses:
                 "204":
                     description: Updated successfully
+                "400":
+                    description: Bad Request
+                "415":
+                    description: Unsupported Media Type
 
     # ---------------- RECIPE INGREDIENTS ----------------
     /api/recipes/{recipe}/ingredients/:
@@ -590,8 +647,16 @@ paths:
             responses:
                 "201":
                     description: Added successfully
+                "400":
+                    description: Bad Request
+                "403":
+                    description: Forbidden
+                "404":
+                    description: Not Found
                 "409":
                     description: Conflict (already exists)
+                "415":
+                    description: Unsupported Media Type
 
     /api/recipes/{recipe}/ingredients/{ingredient}/:
         put:
@@ -624,6 +689,14 @@ paths:
             responses:
                 "204":
                     description: Updated successfully
+                "400":
+                    description: Bad Request
+                "403":
+                    description: Forbidden
+                "404":
+                    description: Not Found
+                "415":
+                    description: Unsupported Media Type
         delete:
             tags: [Recipe Ingredients]
             summary: Remove an ingredient from a recipe
@@ -643,3 +716,5 @@ paths:
             responses:
                 "204":
                     description: Removed successfully
+                "403":
+                    description: Forbidden
