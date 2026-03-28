@@ -10,6 +10,7 @@ from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 from dbms.extensions import cache, db
 from dbms.models import Ingredient
+from dbms.utils import get_pagination_args
 
 
 class IngredientCollection(Resource):
@@ -23,8 +24,7 @@ class IngredientCollection(Resource):
         Uses limit and offset for pagination.
         """
         # get limit and offset from query string, default to limit=10, offset=0
-        limit = request.args.get("limit", 10, type=int)
-        offset = request.args.get("offset", 0, type=int)
+        limit, offset = get_pagination_args()
 
         # apply pagination to query
         ingredients = Ingredient.query.limit(limit).offset(offset).all()

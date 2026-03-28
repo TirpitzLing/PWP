@@ -134,6 +134,10 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/User"
+                "400":
+                    description: Bad Request (Invalid pagination parameters, e.g., negative or non-integer values)
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Users]
             summary: Register a new user
@@ -396,6 +400,10 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Recipe"
+                "400":
+                    description: Bad Request (Invalid pagination parameters, e.g., negative or non-integer values)
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Recipes]
             summary: Create a new recipe
@@ -554,6 +562,10 @@ paths:
                                 type: array
                                 items:
                                     $ref: "#/components/schemas/Ingredient"
+                "400":
+                    description: Bad Request (Invalid pagination parameters, e.g., negative or non-integer values)
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Ingredients]
             summary: Add a new ingredient to database
