@@ -187,6 +187,8 @@ paths:
                     description: Username or email already exists
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/users/{user}/:
         get:
@@ -207,6 +209,8 @@ paths:
                                 $ref: "#/components/schemas/User"
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         put:
             tags: [Users]
             summary: Update user profile
@@ -248,6 +252,8 @@ paths:
                     description: Conflict
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         delete:
             tags: [Users]
             summary: Delete user account
@@ -268,6 +274,8 @@ paths:
                     description: Forbidden
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/users/{user}/recipes/:
         get:
@@ -290,6 +298,8 @@ paths:
                                     $ref: "#/components/schemas/Recipe"
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- SAVES ----------------
     /api/users/{user}/saves/:
@@ -317,6 +327,8 @@ paths:
                     description: Forbidden
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Saves]
             summary: Save a recipe to collection
@@ -349,6 +361,8 @@ paths:
                     description: Not Found
                 "409":
                     description: Recipe already saved
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/users/{user}/saves/{recipe}/:
         delete:
@@ -374,6 +388,8 @@ paths:
                     description: Forbidden
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- RECIPES ----------------
     /api/recipes/:
@@ -434,6 +450,8 @@ paths:
                     description: Unauthorized
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/recipes/{recipe}/:
         get:
@@ -454,6 +472,8 @@ paths:
                                 $ref: "#/components/schemas/Recipe"
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         put:
             tags: [Recipes]
             summary: Update a recipe
@@ -489,6 +509,8 @@ paths:
                     description: Not Found
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         delete:
             tags: [Recipes]
             summary: Delete a recipe
@@ -507,6 +529,8 @@ paths:
                     description: Forbidden
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/recipes/{recipe}/nutrition/:
         get:
@@ -536,6 +560,8 @@ paths:
                                         type: number
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- INGREDIENTS ----------------
     /api/ingredients/:
@@ -594,6 +620,8 @@ paths:
                     description: Bad Request
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/ingredients/{ingredient}/:
         get:
@@ -614,6 +642,8 @@ paths:
                                 $ref: "#/components/schemas/Ingredient"
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         put:
             tags: [Ingredients]
             summary: Update ingredient details
@@ -643,6 +673,8 @@ paths:
                     description: Not Found
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- RECIPE INGREDIENTS ----------------
     /api/recipes/{recipe}/ingredients/:
@@ -666,6 +698,8 @@ paths:
                                     $ref: "#/components/schemas/RecipeIngredient"
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Recipe Ingredients]
             summary: Add an ingredient to a recipe
@@ -704,6 +738,8 @@ paths:
                     description: Conflict (already exists)
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
 
     /api/recipes/{recipe}/ingredients/{ingredient}/:
         put:
@@ -744,6 +780,8 @@ paths:
                     description: Not Found
                 "415":
                     description: Unsupported Media Type
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
         delete:
             tags: [Recipe Ingredients]
             summary: Remove an ingredient from a recipe
@@ -767,3 +805,5 @@ paths:
                     description: Forbidden
                 "404":
                     description: Not Found
+                "500":
+                    description: Internal Server Error (Database failure or unexpected server error)
