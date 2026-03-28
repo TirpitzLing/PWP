@@ -246,6 +246,16 @@ class TestRecipeCollection:
         )
         assert resp.status_code == 401
 
+    def test_get_invalid_pagination_type(self, client):
+        """Test getting recipes with non-integer limit."""
+        resp = client.get(self.RESOURCE_URL + "?limit=abc")
+        assert resp.status_code == 400
+
+    def test_get_negative_pagination(self, client):
+        """Test getting recipes with negative limit."""
+        resp = client.get(self.RESOURCE_URL + "?limit=-5")
+        assert resp.status_code == 400
+
 
 class TestRecipeItem:
     """Tests for the RecipeItem resource (/api/recipes/{id}/)."""

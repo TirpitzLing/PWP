@@ -20,6 +20,7 @@ from werkzeug.exceptions import (
 from dbms.auth import api_key_required
 from dbms.extensions import cache, db
 from dbms.models import Recipe
+from dbms.utils import get_pagination_args
 
 
 class RecipeCollection(Resource):
@@ -35,8 +36,7 @@ class RecipeCollection(Resource):
         Uses limit and offset for pagination.
         """
         # get limit and offset from query string
-        limit = request.args.get("limit", 10, type=int)
-        offset = request.args.get("offset", 0, type=int)
+        limit, offset = get_pagination_args()
 
         # apply to query
         recipes = Recipe.query.limit(limit).offset(offset).all()
