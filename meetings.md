@@ -1,4 +1,4 @@
-# Meetings notes
+# Meetings minutes
 
 ## Meeting 1.
 
@@ -6,7 +6,14 @@
 - **PARTICIPANTS:** Anqi Zhou, Junxuan Ling, Tianyi Liu
 - **TEACHER:** Ivan Sanchez
 
-### Minutes
+### Action points
+
+- Improve the database design
+    - Optimize the database schema by reducing the number of tables.
+    - Modify the scheme design to handle the tag-matching scenario.
+- Study further about the Spoonacular API and improve deliverable 0.
+
+### Notes
 
 The students introduced their idea about developing a recipe API.
 
@@ -16,20 +23,23 @@ It's also recommended to cut some of the tables to keep the project concise.
 
 Lastly, the Spoonacular API presented in the deliverable 0 was discussed and several points that were not quite RESTful were spotted.
 
-### Action points
-
-- Improve the database design
-    - Optimize the database schema by reducing the number of tables.
-    - Modify the scheme design to handle the tag-matching scenario.
-- Study further about the Spoonacular API and improve deliverable 0.
-
 ## Meeting 2.
 
 - **DATE:** 2026/02/13
 - **PARTICIPANTS:** Anqi Zhou, Junxuan Ling, Tianyi Liu
 - **TEACHER:** Ivan Sanchez
 
-### Minutes
+### Action points
+
+- Put all setup and configuration instructions in one central place or clearly linked.
+- Next deliverable
+    - Remember the distinction between database models and API resources.
+    - Implement the API as introduced in the exercise.
+    - Put effort to testing.
+    - To leave time for testing, start as soon as possible.
+    - Avoid adding too much extra functionality.
+
+### Notes
 
 - Database
     - The technology stack is introduced (SQLite, SQLAlchemy)
@@ -44,29 +54,19 @@ Lastly, the Spoonacular API presented in the deliverable 0 was discussed and sev
 
     - The next deliverable will be assessed based on test coverage (>=85%). Tests must cover both successful requests (200 OK) and error handling.
 
-### Action points
-
-- Put all setup and configuration instructions in one central place or clearly linked.
-- Next deliverable
-    - Remember the distinction between database models and API resources.
-    - Implement the API as introduced in the exercise.
-    - Put effort to testing.
-    - To leave time for testing, start as soon as possible.
-    - Avoid adding too much extra functionality.
-
 ## Meeting 3.
 
 - **DATE:**
 - **PARTICIPANTS:**
 - **TEACHER:**
 
-### Minutes
-
-_Summary of what was discussed during the meeting_
-
 ### Action points
 
 _List here the actions points discussed with assistants_
+
+### Notes
+
+Add here notes that you consider important. This is not mandatory
 
 ## Midterm meeting
 
@@ -74,13 +74,13 @@ _List here the actions points discussed with assistants_
 - **PARTICIPANTS:**
 - **TEACHER:**
 
-### Minutes
-
-_Summary of what was discussed during the meeting_
-
 ### Action points
 
 _List here the actions points discussed with assistants_
+
+### Notes
+
+Add here notes that you consider important. This is not mandatory
 
 ## Final meeting
 
@@ -88,10 +88,10 @@ _List here the actions points discussed with assistants_
 - **PARTICIPANTS:**
 - **TEACHER:**
 
-### Minutes
-
-_Summary of what was discussed during the meeting_
-
 ### Action points
 
 _List here the actions points discussed with assistants_
+
+### Notes
+
+Add here notes that you consider important. This is not mandatory
