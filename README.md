@@ -55,13 +55,12 @@ Other libraries used:
 
 You can choose to run this API using either **Docker (Option A)** or a **Manual Python Virtual Environment (Option B)**.
 
----
 
 ## Option A: Run using Docker (Recommended)
 
 Using Docker simplifies the setup process by containerizing the application and its environment. Ensure you have Docker and Docker Compose installed. You can download Docker from [here](https://www.docker.com/) and with Docker service running, you can follow the instructions below.
 
-**Step 1: Build and start the container**
+**Build and start the app in container**
 
 Navigate to the root directory of the project and run:
 
@@ -69,21 +68,24 @@ Navigate to the root directory of the project and run:
 docker compose up
 ```
 
-This will build the image, start the container, and map the API to your machine.
+This will build the image, start the container, and map the API to your machine. Visit `http://127.0.0.1:8080/api/docs` and you can already see the documentation.
 
-**Step 2: Initialize and populate the database**
+> [!NOTE] 
+> 
+> **Initialize and populate the database**
+> 
+> (Initialization and population command has already been included in the docker-compose file. So there is **no need** to run these commands manually!)
+> 
+> Since we use **SQLite** as the built-in database engine, no external database server installation is required. We have created custom Click commands to make initialization and population easy.
+> 
+> Run these commands inside the running container to set up the database:
+> 
+> ```bash
+> docker compose exec dbms-api flask init-db
+> docker compose exec dbms-api flask populate-db
+> ```
 
-Since we use **SQLite** as the built-in database engine, no external database server installation is required. We have created custom Click commands to make initialization and population easy.
-Run these commands inside the running container to set up the database:
-
-```bash
-docker compose exec api flask init-db
-docker compose exec api flask populate-db
-```
-
-**Important:** When you run the `populate-db` command, the terminal will output an Admin API Key. Copy this key, as you will need it to authenticate requests when testing the API!
-
----
+After the command `populate-db` is executed, the terminal will output an Admin API Key. Copy this key, as you will need it to authenticate requests when testing the API!
 
 ## Option B: Manual Setup (Virtual Environment)
 
@@ -93,6 +95,8 @@ Here are 2 tutorials about how to create a virtual environment for Python. You c
 
 1. https://docs.python.org/3/library/venv.html
 2. https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
+
+Here we provide a guide using venv.
 
 **Step 1: Create and activate a virtual environment**
 
