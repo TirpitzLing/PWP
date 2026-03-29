@@ -1,0 +1,14 @@
+services:
+    dbms-api:
+        build: .
+        container_name: dbms-api
+        ports:
+            - "8080:5000"
+
+        # init database, populate and flask run
+        command: >
+            sh -c "flask init-db && 
+                   flask populate-db && 
+                   flask run --host=0.0.0.0"
+        volumes:
+            - .:/app

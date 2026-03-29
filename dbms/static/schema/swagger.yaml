@@ -110,7 +110,7 @@ components:
 
 paths:
     # ---------------- USERS ----------------
-    /api/users/:
+    /users/:
         get:
             tags: [Users]
             summary: Get a paginated list of users
@@ -190,7 +190,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/users/{user}/:
+    /users/{user}/:
         get:
             tags: [Users]
             summary: Get user profile
@@ -277,7 +277,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/users/{user}/recipes/:
+    /users/{user}/recipes/:
         get:
             tags: [Users]
             summary: Get recipes created by a specific user
@@ -302,7 +302,7 @@ paths:
                     description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- SAVES ----------------
-    /api/users/{user}/saves/:
+    /users/{user}/saves/:
         get:
             tags: [Saves]
             summary: Get all saved recipes for a user
@@ -364,7 +364,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/users/{user}/saves/{recipe}/:
+    /users/{user}/saves/{recipe}/:
         delete:
             tags: [Saves]
             summary: Remove a saved recipe from collection
@@ -392,7 +392,7 @@ paths:
                     description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- RECIPES ----------------
-    /api/recipes/:
+    /recipes/:
         get:
             tags: [Recipes]
             summary: Get paginated recipes
@@ -453,7 +453,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/recipes/{recipe}/:
+    /recipes/{recipe}/:
         get:
             tags: [Recipes]
             summary: Get recipe details
@@ -532,7 +532,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/recipes/{recipe}/nutrition/:
+    /recipes/{recipe}/nutrition/:
         get:
             tags: [Recipes]
             summary: Calculate total nutrition for a recipe
@@ -564,7 +564,7 @@ paths:
                     description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- INGREDIENTS ----------------
-    /api/ingredients/:
+    /ingredients/:
         get:
             tags: [Ingredients]
             summary: Get paginated ingredients
@@ -623,7 +623,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/ingredients/{ingredient}/:
+    /ingredients/{ingredient}/:
         get:
             tags: [Ingredients]
             summary: Get ingredient details
@@ -677,7 +677,7 @@ paths:
                     description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- RECIPE INGREDIENTS ----------------
-    /api/recipes/{recipe}/ingredients/:
+    /recipes/{recipe}/ingredients/:
         get:
             tags: [Recipe Ingredients]
             summary: Get all ingredients for a specific recipe
@@ -741,7 +741,7 @@ paths:
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
-    /api/recipes/{recipe}/ingredients/{ingredient}/:
+    /recipes/{recipe}/ingredients/{ingredient}/:
         put:
             tags: [Recipe Ingredients]
             summary: Update amount/unit of an ingredient in a recipe
