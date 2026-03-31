@@ -1,4 +1,3 @@
----
 openapi: 3.0.4
 info:
     title: Daily Bowl Management System API
@@ -108,6 +107,38 @@ components:
                     type: string
                     format: date-time
 
+    parameters:
+        LimitParam:
+            name: limit
+            in: query
+            schema:
+                type: integer
+                default: 10
+        OffsetParam:
+            name: offset
+            in: query
+            schema:
+                type: integer
+                default: 0
+        UserPathParam:
+            name: user
+            in: path
+            required: true
+            schema:
+                type: integer
+        RecipePathParam:
+            name: recipe
+            in: path
+            required: true
+            schema:
+                type: integer
+        IngredientPathParam:
+            name: ingredient
+            in: path
+            required: true
+            schema:
+                type: integer
+
 paths:
     # ---------------- USERS ----------------
     /users/:
@@ -115,16 +146,8 @@ paths:
             tags: [Users]
             summary: Get a paginated list of users
             parameters:
-                - name: limit
-                  in: query
-                  schema:
-                      type: integer
-                      default: 10
-                - name: offset
-                  in: query
-                  schema:
-                      type: integer
-                      default: 0
+                - $ref: "#/components/parameters/LimitParam"
+                - $ref: "#/components/parameters/OffsetParam"
             responses:
                 "200":
                     description: A list of users
@@ -195,11 +218,7 @@ paths:
             tags: [Users]
             summary: Get user profile
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
             responses:
                 "200":
                     description: A user profile
@@ -217,11 +236,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
             requestBody:
                 required: true
                 content:
@@ -260,11 +275,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
             responses:
                 "204":
                     description: User deleted successfully
@@ -282,11 +293,7 @@ paths:
             tags: [Users]
             summary: Get recipes created by a specific user
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
             responses:
                 "200":
                     description: A list of recipes
@@ -309,11 +316,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
             responses:
                 "200":
                     description: List of saved recipes
@@ -335,11 +338,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
             requestBody:
                 required: true
                 content:
@@ -371,16 +370,8 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: user
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/UserPathParam"
+                - $ref: "#/components/parameters/RecipePathParam"
             responses:
                 "204":
                     description: Save removed successfully
@@ -397,16 +388,8 @@ paths:
             tags: [Recipes]
             summary: Get paginated recipes
             parameters:
-                - name: limit
-                  in: query
-                  schema:
-                      type: integer
-                      default: 10
-                - name: offset
-                  in: query
-                  schema:
-                      type: integer
-                      default: 0
+                - $ref: "#/components/parameters/LimitParam"
+                - $ref: "#/components/parameters/OffsetParam"
             responses:
                 "200":
                     description: List of recipes
@@ -458,11 +441,7 @@ paths:
             tags: [Recipes]
             summary: Get recipe details
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
             responses:
                 "200":
                     description: Recipe details
@@ -480,11 +459,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
             requestBody:
                 required: true
                 content:
@@ -517,11 +492,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
             responses:
                 "204":
                     description: Deleted successfully
@@ -537,11 +508,7 @@ paths:
             tags: [Recipes]
             summary: Calculate total nutrition for a recipe
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
             responses:
                 "200":
                     description: Nutritional information
@@ -569,16 +536,8 @@ paths:
             tags: [Ingredients]
             summary: Get paginated ingredients
             parameters:
-                - name: limit
-                  in: query
-                  schema:
-                      type: integer
-                      default: 10
-                - name: offset
-                  in: query
-                  schema:
-                      type: integer
-                      default: 0
+                - $ref: "#/components/parameters/LimitParam"
+                - $ref: "#/components/parameters/OffsetParam"
             responses:
                 "200":
                     description: List of ingredients
@@ -628,11 +587,7 @@ paths:
             tags: [Ingredients]
             summary: Get ingredient details
             parameters:
-                - name: ingredient
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/IngredientPathParam"
             responses:
                 "200":
                     description: Ingredient details
@@ -648,11 +603,7 @@ paths:
             tags: [Ingredients]
             summary: Update ingredient details
             parameters:
-                - name: ingredient
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/IngredientPathParam"
             requestBody:
                 required: true
                 content:
@@ -682,11 +633,7 @@ paths:
             tags: [Recipe Ingredients]
             summary: Get all ingredients for a specific recipe
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
             responses:
                 "200":
                     description: List of ingredient associations
@@ -706,11 +653,7 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
             requestBody:
                 required: true
                 content:
@@ -748,16 +691,8 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
-                - name: ingredient
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
+                - $ref: "#/components/parameters/IngredientPathParam"
             requestBody:
                 required: true
                 content:
@@ -788,16 +723,8 @@ paths:
             security:
                 - ApiKeyAuth: []
             parameters:
-                - name: recipe
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
-                - name: ingredient
-                  in: path
-                  required: true
-                  schema:
-                      type: integer
+                - $ref: "#/components/parameters/RecipePathParam"
+                - $ref: "#/components/parameters/IngredientPathParam"
             responses:
                 "204":
                     description: Removed successfully
