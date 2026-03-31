@@ -29,15 +29,19 @@ components:
         ErrorResponse:
             type: object
             properties:
-                error:
+                code:
+                    type: integer
+                    description: HTTP status code
+                description:
                     type: string
-                    description: error type
-                message:
+                    description: Detailed error description
+                name:
                     type: string
-                    description: error description
+                    description: Name of the error
             example:
-                error: "Forbidden"
-                message: "You can only update your own profile."
+                code: 403
+                description: "You can only update your own profile."
+                name: "Forbidden"
 
         User:
             type: object
@@ -388,8 +392,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "Invalid pagination parameters. Limit and offset must be non-negative."
+                                code: 400
+                                description: "Invalid pagination parameters. Limit and offset must be non-negative."
+                                name: "Bad Request"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         post:
@@ -419,8 +424,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "409":
                     description: Username or email already exists
                     content:
@@ -428,8 +434,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Conflict"
-                                message: "Username or email already exists"
+                                code: 409
+                                description: "Username or email already exists"
+                                name: "Conflict"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -437,8 +444,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -462,8 +470,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "User with id {value} not found."
+                                code: 404
+                                description: "User with id 42 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         put:
@@ -489,8 +498,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "401":
                     description: Unauthorized
                     content:
@@ -498,8 +508,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Authentication required. Please provide a valid dbms-api-key header."
+                                code: 401
+                                description: "Authentication required. Please provide a valid dbms-api-key header."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden (Not your account)
                     content:
@@ -507,8 +518,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only update your own profile."
+                                code: 403
+                                description: "You can only update your own profile."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -516,8 +528,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "User with id {value} not found."
+                                code: 404
+                                description: "User with id 42 not found."
+                                name: "Not Found"
                 "409":
                     description: Conflict
                     content:
@@ -525,8 +538,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Conflict"
-                                message: "Username or email already exists"
+                                code: 409
+                                description: "Username or email already exists"
+                                name: "Conflict"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -534,8 +548,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         delete:
@@ -555,8 +570,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -564,8 +580,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only delete your own account."
+                                code: 403
+                                description: "You can only delete your own account."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -573,8 +590,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "User with id {value} not found."
+                                code: 404
+                                description: "User with id 42 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -600,8 +618,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "User with id {value} not found."
+                                code: 404
+                                description: "User with id 42 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -630,8 +649,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -639,8 +659,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only view your own saved recipes."
+                                code: 403
+                                description: "You can only view your own saved recipes."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -648,8 +669,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "User with id {value} not found."
+                                code: 404
+                                description: "User with id 42 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         post:
@@ -679,8 +701,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "Missing recipe_id in the request payload."
+                                code: 400
+                                description: "Missing recipe_id in the request payload."
+                                name: "Bad Request"
                 "401":
                     description: Unauthorized
                     content:
@@ -688,8 +711,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -697,8 +721,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only save recipes to your own account."
+                                code: 403
+                                description: "You can only save recipes to your own account."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -706,8 +731,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "User with id {value} not found."
+                                code: 404
+                                description: "User with id 42 not found."
+                                name: "Not Found"
                 "409":
                     description: Recipe already saved
                     content:
@@ -715,8 +741,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Conflict"
-                                message: "Recipe already saved by this user"
+                                code: 409
+                                description: "Recipe already saved by this user"
+                                name: "Conflict"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -739,8 +766,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -748,8 +776,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only remove recipes from your own account"
+                                code: 403
+                                description: "You can only remove recipes from your own account"
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -757,8 +786,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Save with id {value} not found."
+                                code: 404
+                                description: "Save with id 42-88 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -786,8 +816,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "Invalid pagination parameters. Limit and offset must be non-negative."
+                                code: 400
+                                description: "Invalid pagination parameters. Limit and offset must be non-negative."
+                                name: "Bad Request"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         post:
@@ -815,8 +846,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "401":
                     description: Unauthorized
                     content:
@@ -824,8 +856,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -833,8 +866,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON"
+                                code: 415
+                                description: "Request payload must be JSON"
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -858,8 +892,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         put:
@@ -885,8 +920,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "401":
                     description: Unauthorized
                     content:
@@ -894,8 +930,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -903,8 +940,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only update your own recipes."
+                                code: 403
+                                description: "You can only update your own recipes."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -912,8 +950,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -921,8 +960,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         delete:
@@ -942,8 +982,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -951,8 +992,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only delete your own recipes."
+                                code: 403
+                                description: "You can only delete your own recipes."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -960,8 +1002,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -985,8 +1028,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -1014,8 +1058,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "Invalid pagination parameters. Limit and offset must be non-negative."
+                                code: 400
+                                description: "Invalid pagination parameters. Limit and offset must be non-negative."
+                                name: "Bad Request"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         post:
@@ -1041,8 +1086,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -1050,8 +1096,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -1075,8 +1122,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Ingredient with id {value} not found."
+                                code: 404
+                                description: "Ingredient with id 20 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         put:
@@ -1100,8 +1148,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "404":
                     description: Not Found
                     content:
@@ -1109,8 +1158,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Ingredient with id {value} not found."
+                                code: 404
+                                description: "Ingredient with id 20 not found."
+                                name: "Not Found"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -1118,8 +1168,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -1146,8 +1197,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         post:
@@ -1177,8 +1229,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "Missing ingredient_id in the request payload."
+                                code: 400
+                                description: "Missing ingredient_id in the request payload."
+                                name: "Bad Request"
                 "401":
                     description: Unauthorized
                     content:
@@ -1186,8 +1239,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -1195,8 +1249,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only add ingredients to your own recipes."
+                                code: 403
+                                description: "You can only add ingredients to your own recipes."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -1204,8 +1259,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "409":
                     description: Conflict (already exists)
                     content:
@@ -1213,8 +1269,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Conflict"
-                                message: "This ingredient has already been added to the recipe"
+                                code: 409
+                                description: "This ingredient has already been added to the recipe"
+                                name: "Conflict"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -1222,8 +1279,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
 
@@ -1252,8 +1310,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Bad Request"
-                                message: "JSON Schema validation failed."
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
                 "401":
                     description: Unauthorized
                     content:
@@ -1261,8 +1320,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -1270,8 +1330,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only update ingredients in your own recipes."
+                                code: 403
+                                description: "You can only update ingredients in your own recipes."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -1279,8 +1340,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Ingredient association not found in this recipe."
+                                code: 404
+                                description: "Ingredient association not found in this recipe."
+                                name: "Not Found"
                 "415":
                     description: Unsupported Media Type
                     content:
@@ -1288,8 +1350,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unsupported Media Type"
-                                message: "Request payload must be JSON."
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
         delete:
@@ -1310,8 +1373,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Unauthorized"
-                                message: "Invalid API key."
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
                 "403":
                     description: Forbidden
                     content:
@@ -1319,8 +1383,9 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Forbidden"
-                                message: "You can only delete ingredients from your own recipes."
+                                code: 403
+                                description: "You can only delete ingredients from your own recipes."
+                                name: "Forbidden"
                 "404":
                     description: Not Found
                     content:
@@ -1328,7 +1393,8 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ErrorResponse"
                             example:
-                                error: "Not Found"
-                                message: "Recipe with id {value} not found."
+                                code: 404
+                                description: "Recipe with id 88 not found."
+                                name: "Not Found"
                 "500":
                     description: Internal Server Error (Database failure or unexpected server error)
