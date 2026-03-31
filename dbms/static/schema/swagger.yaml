@@ -25,6 +25,20 @@ components:
             description: Provide your API key to access protected endpoints.
 
     schemas:
+        # for error response
+        ErrorResponse:
+            type: object
+            properties:
+                error:
+                    type: string
+                    description: error type
+                message:
+                    type: string
+                    description: error description
+            example:
+                error: "Forbidden"
+                message: "You can only update your own profile."
+
         User:
             type: object
             properties:
@@ -40,6 +54,13 @@ components:
                 allergies:
                     type: string
                     nullable: true
+            example:
+                id: 1
+                username: "oulu_chef"
+                email: "chef@student.oulu.fi"
+                created_at: "2026-03-31T14:00:00Z"
+                allergies: "Lactose"
+
         UserCreate:
             type: object
             required: [username, email, pwd]
@@ -50,6 +71,11 @@ components:
                     type: string
                 pwd:
                     type: string
+            example:
+                username: "oulu_chef"
+                email: "chef@student.oulu.fi"
+                pwd: "SecurePassword123!"
+
         UserCreateResponse:
             type: object
             properties:
@@ -67,6 +93,14 @@ components:
                     nullable: true
                 api_key:
                     type: string
+            example:
+                id: 1
+                username: "oulu_chef"
+                email: "chef@student.oulu.fi"
+                created_at: "2026-03-31T14:00:00Z"
+                allergies: null
+                api_key: "dbms-test-key-7a8b9c"
+
         UserUpdate:
             type: object
             properties:
@@ -78,6 +112,12 @@ components:
                     type: string
                 allergies:
                     type: string
+            example:
+                username: "oulu_master_chef"
+                email: "master_chef@student.oulu.fi"
+                pwd: "NewSecurePassword456!"
+                allergies: "Peanuts, Lactose"
+
         Recipe:
             type: object
             properties:
@@ -102,6 +142,16 @@ components:
                     nullable: true
                 created_by:
                     type: integer
+            example:
+                id: 88
+                title: "Tomato and Egg Stir-fry"
+                procedure: "1. Beat the eggs. 2. Chop tomatoes into chunks. 3. Scramble eggs in hot oil and set aside. 4. Stir-fry tomatoes until soft and juicy, return eggs to the pan, season with salt and a pinch of sugar, and serve."
+                created_at: "2026-03-31T18:00:00Z"
+                servings: 2
+                cuisine_type: "Chinese"
+                cooking_methods: "Stir-frying"
+                created_by: 1
+
         RecipeCreate:
             type: object
             required: [title]
@@ -114,6 +164,12 @@ components:
                     type: integer
                 cuisine_type:
                     type: string
+            example:
+                title: "Tomato and Egg Stir-fry"
+                procedure: "1. Beat the eggs. 2. Chop tomatoes into chunks. 3. Scramble eggs in hot oil and set aside. 4. Stir-fry tomatoes until soft and juicy, return eggs to the pan, season with salt and a pinch of sugar, and serve."
+                servings: 2
+                cuisine_type: "Chinese"
+
         RecipeUpdate:
             type: object
             properties:
@@ -123,6 +179,11 @@ components:
                     type: string
                 servings:
                     type: integer
+            example:
+                title: "Homestyle Tomato and Egg Stir-fry"
+                procedure: "1. Add a splash of water to eggs before beating. 2. Peel and chop tomatoes. 3. Scramble eggs. 4. Sauté scallions, cook tomatoes until soft, mix in eggs, and season."
+                servings: 3
+
         RecipeNutritionStats:
             type: object
             properties:
@@ -134,6 +195,12 @@ components:
                     type: number
                 total_fat:
                     type: number
+            example:
+                total_calories: 320.5
+                total_carbs: 15.0
+                total_protein: 18.5
+                total_fat: 22.0
+
         Ingredient:
             type: object
             properties:
@@ -155,6 +222,16 @@ components:
                     type: number
                 fat:
                     type: number
+            example:
+                id: 20
+                name: "Tomato"
+                img_url: "https://www.walmart.com/ip/Fresh-Slicing-Tomato-Each/44390971"
+                allergy: null
+                calories: 18.0
+                carbs: 3.9
+                protein: 0.9
+                fat: 0.2
+
         IngredientCreate:
             type: object
             required: [name]
@@ -169,6 +246,13 @@ components:
                     type: number
                 fat:
                     type: number
+            example:
+                name: "Egg"
+                calories: 143.0
+                protein: 12.6
+                carbs: 0.7
+                fat: 9.5
+
         IngredientUpdate:
             type: object
             properties:
@@ -176,6 +260,10 @@ components:
                     type: string
                 calories:
                     type: number
+            example:
+                name: "Free-range Egg"
+                calories: 150.0
+
         RecipeIngredient:
             type: object
             properties:
@@ -187,6 +275,12 @@ components:
                     type: number
                 unit:
                     type: string
+            example:
+                recipe_id: 88
+                ingredient_id: 20
+                amount: 300.0
+                unit: "grams"
+
         RecipeIngredientCreate:
             type: object
             required: [ingredient_id]
@@ -197,6 +291,11 @@ components:
                     type: number
                 unit:
                     type: string
+            example:
+                ingredient_id: 20
+                amount: 3.0
+                unit: "pieces"
+
         RecipeIngredientUpdate:
             type: object
             properties:
@@ -204,6 +303,10 @@ components:
                     type: number
                 unit:
                     type: string
+            example:
+                amount: 400.0
+                unit: "grams"
+
         Save:
             type: object
             properties:
@@ -214,12 +317,19 @@ components:
                 created_at:
                     type: string
                     format: date-time
+            example:
+                user_id: 1
+                recipe_id: 88
+                created_at: "2026-03-31T18:30:00Z"
+
         SaveCreate:
             type: object
             required: [recipe_id]
             properties:
                 recipe_id:
                     type: integer
+            example:
+                recipe_id: 88
 
     parameters:
         LimitParam:
