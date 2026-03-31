@@ -40,6 +40,44 @@ components:
                 allergies:
                     type: string
                     nullable: true
+        UserCreate:
+            type: object
+            required: [username, email, pwd]
+            properties:
+                username:
+                    type: string
+                email:
+                    type: string
+                pwd:
+                    type: string
+        UserCreateResponse:
+            type: object
+            properties:
+                id:
+                    type: integer
+                username:
+                    type: string
+                email:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                allergies:
+                    type: string
+                    nullable: true
+                api_key:
+                    type: string
+        UserUpdate:
+            type: object
+            properties:
+                username:
+                    type: string
+                email:
+                    type: string
+                pwd:
+                    type: string
+                allergies:
+                    type: string
         Recipe:
             type: object
             properties:
@@ -64,6 +102,38 @@ components:
                     nullable: true
                 created_by:
                     type: integer
+        RecipeCreate:
+            type: object
+            required: [title]
+            properties:
+                title:
+                    type: string
+                procedure:
+                    type: string
+                servings:
+                    type: integer
+                cuisine_type:
+                    type: string
+        RecipeUpdate:
+            type: object
+            properties:
+                title:
+                    type: string
+                procedure:
+                    type: string
+                servings:
+                    type: integer
+        RecipeNutritionStats:
+            type: object
+            properties:
+                total_calories:
+                    type: number
+                total_carbs:
+                    type: number
+                total_protein:
+                    type: number
+                total_fat:
+                    type: number
         Ingredient:
             type: object
             properties:
@@ -85,6 +155,27 @@ components:
                     type: number
                 fat:
                     type: number
+        IngredientCreate:
+            type: object
+            required: [name]
+            properties:
+                name:
+                    type: string
+                calories:
+                    type: number
+                protein:
+                    type: number
+                carbs:
+                    type: number
+                fat:
+                    type: number
+        IngredientUpdate:
+            type: object
+            properties:
+                name:
+                    type: string
+                calories:
+                    type: number
         RecipeIngredient:
             type: object
             properties:
@@ -92,6 +183,23 @@ components:
                     type: integer
                 ingredient_id:
                     type: integer
+                amount:
+                    type: number
+                unit:
+                    type: string
+        RecipeIngredientCreate:
+            type: object
+            required: [ingredient_id]
+            properties:
+                ingredient_id:
+                    type: integer
+                amount:
+                    type: number
+                unit:
+                    type: string
+        RecipeIngredientUpdate:
+            type: object
+            properties:
                 amount:
                     type: number
                 unit:
@@ -106,6 +214,12 @@ components:
                 created_at:
                     type: string
                     format: date-time
+        SaveCreate:
+            type: object
+            required: [recipe_id]
+            properties:
+                recipe_id:
+                    type: integer
 
     parameters:
         LimitParam:
@@ -169,15 +283,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            required: [username, email, pwd]
-                            properties:
-                                username:
-                                    type: string
-                                email:
-                                    type: string
-                                pwd:
-                                    type: string
+                            $ref: "#/components/schemas/UserCreate"
             responses:
                 "201":
                     description: User created successfully
@@ -188,22 +294,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    id:
-                                        type: integer
-                                    username:
-                                        type: string
-                                    email:
-                                        type: string
-                                    created_at:
-                                        type: string
-                                        format: date-time
-                                    allergies:
-                                        type: string
-                                        nullable: true
-                                    api_key:
-                                        type: string
+                                $ref: "#/components/schemas/UserCreateResponse"
                 "400":
                     description: Bad request (validation error)
                 "409":
@@ -242,16 +333,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            properties:
-                                username:
-                                    type: string
-                                email:
-                                    type: string
-                                pwd:
-                                    type: string
-                                allergies:
-                                    type: string
+                            $ref: "#/components/schemas/UserUpdate"
             responses:
                 "204":
                     description: User updated successfully
@@ -344,11 +426,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            required: [recipe_id]
-                            properties:
-                                recipe_id:
-                                    type: integer
+                            $ref: "#/components/schemas/SaveCreate"
             responses:
                 "201":
                     description: Recipe saved
@@ -413,17 +491,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            required: [title]
-                            properties:
-                                title:
-                                    type: string
-                                procedure:
-                                    type: string
-                                servings:
-                                    type: integer
-                                cuisine_type:
-                                    type: string
+                            $ref: "#/components/schemas/RecipeCreate"
             responses:
                 "201":
                     description: Recipe created
@@ -465,14 +533,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            properties:
-                                title:
-                                    type: string
-                                procedure:
-                                    type: string
-                                servings:
-                                    type: integer
+                            $ref: "#/components/schemas/RecipeUpdate"
             responses:
                 "204":
                     description: Updated successfully
@@ -515,16 +576,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    total_calories:
-                                        type: number
-                                    total_carbs:
-                                        type: number
-                                    total_protein:
-                                        type: number
-                                    total_fat:
-                                        type: number
+                                $ref: "#/components/schemas/RecipeNutritionStats"
                 "404":
                     description: Not Found
                 "500":
@@ -559,19 +611,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            required: [name]
-                            properties:
-                                name:
-                                    type: string
-                                calories:
-                                    type: number
-                                protein:
-                                    type: number
-                                carbs:
-                                    type: number
-                                fat:
-                                    type: number
+                            $ref: "#/components/schemas/IngredientCreate"
             responses:
                 "201":
                     description: Ingredient created
@@ -609,12 +649,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            properties:
-                                name:
-                                    type: string
-                                calories:
-                                    type: number
+                            $ref: "#/components/schemas/IngredientUpdate"
             responses:
                 "204":
                     description: Updated successfully
@@ -659,15 +694,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            required: [ingredient_id]
-                            properties:
-                                ingredient_id:
-                                    type: integer
-                                amount:
-                                    type: number
-                                unit:
-                                    type: string
+                            $ref: "#/components/schemas/RecipeIngredientCreate"
             responses:
                 "201":
                     description: Added successfully
@@ -698,12 +725,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            type: object
-                            properties:
-                                amount:
-                                    type: number
-                                unit:
-                                    type: string
+                            $ref: "#/components/schemas/RecipeIngredientUpdate"
             responses:
                 "204":
                     description: Updated successfully
