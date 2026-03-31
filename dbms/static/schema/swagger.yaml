@@ -411,8 +411,10 @@ paths:
                     description: User created successfully
                     headers:
                         Location:
+                            description: URI of the newly created user
                             schema:
                                 type: string
+                                example: /api/users/42
                     content:
                         application/json:
                             schema:
@@ -692,8 +694,10 @@ paths:
                     description: Recipe saved
                     headers:
                         Location:
+                            description: URI of the newly created save record
                             schema:
                                 type: string
+                                example: /api/users/42/saves/88
                 "400":
                     description: Bad Request
                     content:
@@ -837,8 +841,10 @@ paths:
                     description: Recipe created
                     headers:
                         Location:
+                            description: URI of the newly created recipe
                             schema:
                                 type: string
+                                example: /api/recipes/88
                 "400":
                     description: Bad Request
                     content:
@@ -1077,8 +1083,10 @@ paths:
                     description: Ingredient created
                     headers:
                         Location:
+                            description: URI of the newly created ingredient
                             schema:
                                 type: string
+                                example: /api/ingredients/20
                 "400":
                     description: Bad Request
                     content:
@@ -1220,8 +1228,10 @@ paths:
                     description: Added successfully
                     headers:
                         Location:
+                            description: URI of the newly created recipe-ingredient association
                             schema:
                                 type: string
+                                example: /api/recipes/88/ingredients/20
                 "400":
                     description: Bad Request
                     content:
