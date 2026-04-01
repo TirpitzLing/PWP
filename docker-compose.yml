@@ -2,7 +2,7 @@ services:
   dbms-api:
     build: .
     container_name: dbms-api
-    restart: always  
+    restart: always
     command: >
       sh -c "flask --app=dbms init-db && 
              flask --app=dbms populate-db && 
