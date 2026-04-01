@@ -86,6 +86,10 @@ def populate_db_command():
     )
     db.session.commit()
 
+    from dbms.extensions import cache
+
+    cache.clear()
+
     click.echo("Database populated successfully!")
     click.echo("[*] Admin User created: 'admin'")
     click.echo(

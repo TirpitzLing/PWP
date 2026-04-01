@@ -1,14 +1,22 @@
 services:
-    dbms-api:
-        build: .
-        container_name: dbms-api
-        ports:
-            - "8080:5000"
+  dbms-api:
+    build: .
+    container_name: dbms-api
+    restart: always 
+    command: >
+      sh -c "flask --app=dbms init-db && 
+             flask --app=dbms populate-db && 
+             gunicorn -w 4 -b 0.0.0.0:8000 'dbms:create_app()'"
+    volumes:
+      - .:/app
 
-        # init database, populate and flask run
-        command: >
-            sh -c "flask init-db && 
-                   flask populate-db && 
-                   flask run --host=0.0.0.0"
-        volumes:
-            - .:/app
+  nginx:
+    image: nginx:latest
+    container_name: dbms-nginx
+    restart: always
+    ports:
+      - "80:80" 
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - dbms-api
