@@ -25,6 +25,8 @@ The **Daily Bowl Management System(DBMS)** is a **RESTful API** built with **Fla
 │   ├── resources/        # API route handlers (endpoints)
 │   └── static/schema/    # Swagger UI OpenAPI specification
 ├── instance/             # Local database storage (dbms.db)
+├── nginx/                # NGINX configuration and SSL certificates
+├── scripts/              # Automated deployment scripts
 ├── tests/                # Unit and API tests
 ├── pyproject.toml        # Project metadata and build configuration
 └── requirements.txt      # Project dependencies
@@ -46,11 +48,15 @@ Other libraries used:
 - **Documentation:** `flask-swagger-ui` (4.11.1) to serve the interactive Swagger/OpenAPI documentation
 - **Utilities:** `click` (8.3.1) for CLI commands, `Flask-Caching` (2.3.1) & `cachelib` (0.13.0) for API caching
 - **Development & Testing:** `pytest` (9.0.2) for unit testing and `flake8` for code linting
-### external libraries and resources:
+- **Production Server:** `gunicorn` as WSGI HTTP server, and `nginx` as a reverse proxy.
+
+### External libraries and resources:
 
 - [Flask-SQLAlchemy Documentation](https://flask-sqlalchemy.palletsprojects.com/)
 - [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/14/orm/tutorial.html)
 - [SQLite Official Documentation](https://www.sqlite.org/docs.html)
+
+
 # 2. How to Setup and Run the Application
 
 You can choose to run this API using either **Docker (Option A)** or a **Manual Python Virtual Environment (Option B)**.
@@ -60,7 +66,15 @@ You can choose to run this API using either **Docker (Option A)** or a **Manual 
 
 Using Docker simplifies the setup process by containerizing the application and its environment. Ensure you have Docker and Docker Compose installed. You can download Docker from [here](https://www.docker.com/) and with Docker service running, you can follow the instructions below.
 
-**Build and start the app in container**
+**Step 1: Generate SSL Certificates**
+Before running Docker, you must generate the self-signed SSL certificates for NGINX. Navigate to the root directory and run the provided script:
+- **Windows:** Double-click `generate_cert.bat` or run it in CMD.
+- **macOS/Linux:** Run `bash generate_cert.sh`.
+
+*(This will create `server.crt` and `server.key` inside the `nginx/certs/` folder).*
+
+
+**Step 2: Build and start the app in container**
 
 Navigate to the root directory of the project and run:
 
@@ -68,7 +82,7 @@ Navigate to the root directory of the project and run:
 docker compose up
 ```
 
-This will build the image, start the container, and map the API to your machine. Visit `http://127.0.0.1:8080/api/docs` and you can already see the documentation.
+This will build the image, start the container (dbms-api and nginx), and map the API to your machine. Visit `http://127.0.0.1:8080/api/docs` and you can already see the documentation.
 
 > [!NOTE] 
 > 
@@ -86,6 +100,15 @@ This will build the image, start the container, and map the API to your machine.
 > ```
 
 After the command `populate-db` is executed, the terminal will output an Admin API Key. Copy this key, as you will need it to authenticate requests when testing the API!
+
+### Option A.1: Automated Deployment Scripts (Windows Cloud Server)
+
+To facilitate a smooth CI/CD pipeline on our Windows Cloud Server, we have implemented two custom batch scripts for automated deployment:
+
+- **`start_server.bat`**: A one-click hosting script that automatically navigates to the project directory, cleanly brings down any existing containers, and rebuilds/starts the Docker environment in detached mode. It provides a visual confirmation when the server is successfully running.
+- **`autodeploy.bat`**: A watchdog script that enables continuous deployment. It runs a continuous loop that fetches updates from the remote `main` branch. If it detects that the local code is behind the remote repository, it automatically pulls the latest code, rebuilds the Docker containers, and restarts the services. It checks for updates every 15 minutes to ensure the production environment stays up to date without manual intervention.
+
+*(Note: If utilizing these scripts on a new server, ensure the absolute directory path `cd /d F:\Coding\Projects\pwp\PWP` inside the `.bat` files is updated to match your deployment environment).*
 
 ## Option B: Manual Setup (Virtual Environment)
 
@@ -177,12 +200,18 @@ The base path to your application depends on how you started it:
 
 We use Swagger UI for easy endpoint exploration. To view all available routes (like `/api/users/` or `/api/recipes/`), check required parameters, and test the API directly from your browser, navigate to:
 
-- If using **Docker**: http://localhost:8080/api/docs
-- If using **Manual Setup**: http://localhost:5000/api/docs
+- **Cloud Production Deployment (Docker + NGINX):**
+  > **https://edvic.ddns.net/api/docs**
+  > *(Note: Since we use self-signed certificates, please click "Advanced" -> "Proceed/Continue" if your browser shows a security warning.)*
+
+- **Local Manual Setup (Flask dev server):**
+  > **http://localhost:5000/api/docs**
 
 (This interface is automatically generated by reading `dbms/static/schema/swagger.yaml` file).
 
 # 4. How to Run the Test
+
+To verify that the API functions correctly, we use `pytest`. Ensure your virtual environment is activated, then run:
 
 ```bash
 pip install pytest pytest-cov
