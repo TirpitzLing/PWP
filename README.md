@@ -27,6 +27,7 @@ The **Daily Bowl Management System (DBMS)** is a **RESTful API** built with **Fl
 ├── nginx/                # NGINX configuration and SSL certificates
 ├── scripts/              # Automated deployment scripts
 ├── tests/                # Unit and API tests
+├── auto_deploy.bat       # Script for auto update code and re-deploy on Windows
 ├── generate_cert.bat     # Script for generating certificates on Windows
 ├── generate_cert.sh      # Script for generating certificates on MacOS/Linux
 ├── pyproject.toml        # Project metadata and build configuration
