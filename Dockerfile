@@ -27,5 +27,5 @@ USER appuser
 # 8. Expose the port Gunicorn will run on
 EXPOSE 8000
 
-# 9. Run the application using GUNICORN instead of flask run
+# 9. Run the application using GUNICORN with 4 workers instead of flask run
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "dbms:create_app()"]

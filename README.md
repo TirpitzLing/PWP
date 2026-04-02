@@ -28,6 +28,8 @@ The **Daily Bowl Management System(DBMS)** is a **RESTful API** built with **Fla
 ├── nginx/                # NGINX configuration and SSL certificates
 ├── scripts/              # Automated deployment scripts
 ├── tests/                # Unit and API tests
+├── generate_cert.bat     # Script for generating certificates on Windows
+├── generate_cert.sh      # Script for generating certificates on MacOS/Linux
 ├── pyproject.toml        # Project metadata and build configuration
 └── requirements.txt      # Project dependencies
 ```
@@ -82,7 +84,7 @@ Navigate to the root directory of the project and run:
 docker compose up
 ```
 
-This will build the image, start the container (dbms-api and nginx), and map the API to your machine. Visit `http://127.0.0.1:8080/api/docs` and you can already see the documentation.
+This will build the image, start the container (dbms-api and nginx), and map the API to your machine. Visit `http://127.0.0.1:10013/api/docs` and you can already see the documentation.
 
 > [!NOTE] 
 > 
@@ -193,7 +195,7 @@ Once the backend server is running, your RESTful API is accessible locally.
 
 The base path to your application depends on how you started it:
 
-- If using **Docker (Option A)**: http://localhost:8080/
+- If using **Docker (Option A)**: http://localhost:10013/
 - If using **Manual Setup (Option B)**: http://localhost:5000/
 
 **Interactive API Documentation (Swagger UI):**
@@ -201,7 +203,7 @@ The base path to your application depends on how you started it:
 We use Swagger UI for easy endpoint exploration. To view all available routes (like `/api/users/` or `/api/recipes/`), check required parameters, and test the API directly from your browser, navigate to:
 
 - **Cloud Production Deployment (Docker + NGINX):**
-  > **https://edvic.ddns.net/api/docs**
+  > **https://edvic.ddns.net/api/docs (https://your.host.ip/api/docs)**
   > *(Note: Since we use self-signed certificates, please click "Advanced" -> "Proceed/Continue" if your browser shows a security warning.)*
 
 - **Local Manual Setup (Flask dev server):**
