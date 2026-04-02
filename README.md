@@ -13,7 +13,7 @@
 
 # Overview
 
-The **Daily Bowl Management System(DBMS)** is a **RESTful API** built with **Flask** and **SQLAlchemy**. It is designed to manage users, ingredients, and recipes, allowing users to create, save their favorite recipes, and track nutritional information.
+The **Daily Bowl Management System (DBMS)** is a **RESTful API** built with **Flask** and **SQLAlchemy**. It is designed to manage users, ingredients, and recipes, allowing users to create, save their favorite recipes, and track nutritional information.
 
 ```text
 .
@@ -34,11 +34,17 @@ The **Daily Bowl Management System(DBMS)** is a **RESTful API** built with **Fla
 └── requirements.txt      # Project dependencies
 ```
 
-# 1. Dependencies (External Libraries)
+# 1. Prerequisites & Dependencies (External Libraries)
 
-The project uses **Python 3.10** and relies on several external libraries. The complete list with exact versions is pinned in the `requirements.txt` file.
+### Required Software
+To set up and maintain the environment, the following software must be installed on the host machine:
+- **Docker & Docker Compose**: For containerized deployment and environment management.
+- **OpenSSL**: Essential for creating and maintaining the SSL certificates required for HTTPS.
+- **Git**: Required for version control and utilizing the automated deployment scripts.
+- **Python 3.10**: Required only for manual setup (Option B).
 
-The core dependencies include:
+### External Libraries
+The complete list of Python dependencies is pinned in `requirements.txt`. Core libraries include:
 
 - **Flask** – Web framework used to manage the application context
 - **Flask-SQLAlchemy** – Flask extension for SQLAlchemy ORM integration
@@ -52,7 +58,7 @@ Other libraries used:
 - **Development & Testing:** `pytest` (9.0.2) for unit testing and `flake8` for code linting
 - **Production Server:** `gunicorn` as WSGI HTTP server, and `nginx` as a reverse proxy.
 
-### External libraries and resources:
+### Resources:
 
 - [Flask-SQLAlchemy Documentation](https://flask-sqlalchemy.palletsprojects.com/)
 - [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/14/orm/tutorial.html)
@@ -69,14 +75,14 @@ You can choose to run this API using either **Docker (Option A)** or a **Manual 
 Using Docker simplifies the setup process by containerizing the application and its environment. Ensure you have Docker and Docker Compose installed. You can download Docker from [here](https://www.docker.com/) and with Docker service running, you can follow the instructions below.
 
 **Step 1: Generate SSL Certificates**
-Before running Docker, you must generate the self-signed SSL certificates for NGINX. Navigate to the root directory and run the provided script:
+Before running Docker, you must generate self-signed SSL certificates for NGINX. Navigate to the root directory and run the provided script:
 - **Windows:** Double-click `generate_cert.bat` or run it in CMD.
-- **macOS/Linux:** Run `bash generate_cert.sh`.
+- **macOS/Linux: Enter project root directory** and run `bash generate_cert.sh`.
 
-*(This will create `server.crt` and `server.key` inside the `nginx/certs/` folder).*
+*(This creates `server.crt` and `server.key` inside the `nginx/certs/` folder).*
 
 
-**Step 2: Build and start the app in container**
+**Step 2: Build and Start Containers**
 
 Navigate to the root directory of the project and run:
 
@@ -84,8 +90,23 @@ Navigate to the root directory of the project and run:
 docker compose up
 ```
 
-This will build the image, start the container (dbms-api and nginx), and map the API to your machine. Visit `http://127.0.0.1:10013/api/docs` and you can already see the documentation.
+This will build the image, starts the container (`dbms-api` and `nginx`), and map the API to your machine. Visit `http://127.0.0.1:10013/api/docs` for the documentation.
 
+###  Environment Configuration Check
+To verify the environment is properly configured, perform the following tests:
+1.  **Check Container Status**: Run `docker compose ps`. Both services should be in the `Up` state.
+2.  **Verify HTTPS Connectivity**: 
+    - **Windows (PowerShell):** `curl.exe -k -I https://localhost:10013/api/docs/`
+    - **Linux/Mac:** `curl -k -I https://localhost:10013/api/docs/`
+    *(Expected: `HTTP/1.1 200 OK`)*
+3.  **Database Check**: Confirm that the `instance/dbms.db` file is present in the project directory after startup.
+
+**Step 3: Initialize and Populate the Database**
+Initialization is handled automatically by the Docker entrypoint. To manually reset or add sample data, run:
+```bash
+docker compose exec dbms-api flask init-db
+docker compose exec dbms-api flask populate-db
+```
 > [!NOTE] 
 > 
 > **Initialize and populate the database**
@@ -94,23 +115,19 @@ This will build the image, start the container (dbms-api and nginx), and map the
 > 
 > Since we use **SQLite** as the built-in database engine, no external database server installation is required. We have created custom Click commands to make initialization and population easy.
 > 
-> Run these commands inside the running container to set up the database:
 > 
-> ```bash
-> docker compose exec dbms-api flask init-db
-> docker compose exec dbms-api flask populate-db
-> ```
 
 After the command `populate-db` is executed, the terminal will output an Admin API Key. Copy this key, as you will need it to authenticate requests when testing the API!
 
 ### Option A.1: Automated Deployment Scripts (Windows Cloud Server)
 
-To facilitate a smooth CI/CD pipeline on our Windows Cloud Server, we have implemented two custom batch scripts for automated deployment:
 
-- **`start_server.bat`**: A one-click hosting script that automatically navigates to the project directory, cleanly brings down any existing containers, and rebuilds/starts the Docker environment in detached mode. It provides a visual confirmation when the server is successfully running.
-- **`autodeploy.bat`**: A watchdog script that enables continuous deployment. It runs a continuous loop that fetches updates from the remote `main` branch. If it detects that the local code is behind the remote repository, it automatically pulls the latest code, rebuilds the Docker containers, and restarts the services. It checks for updates every 15 minutes to ensure the production environment stays up to date without manual intervention.
+- **Automated Deployment**: Use `scripts/autodeploy.bat` (Windows) for a CI/CD loop that pulls from GitHub and restarts containers every 15 minutes. *(Note: If utilizing these scripts on a new server, ensure the absolute directory path `cd /d X:\FILE_PATH_TO_THE_PROJECT` inside the `.bat` files is updated to match your deployment environment).*
+- **Firewall Configuration**: Ensure **TCP port 10013** is open in your Windows Firewall and (if have) router's port-forwarding settings to allow external access.
+- **TLS Protocol**: The NGINX proxy is configured to use **TLS 1.2 and 1.3** to ensure secure data transmission.
 
-*(Note: If utilizing these scripts on a new server, ensure the absolute directory path `cd /d X:\FILE_PATH_TO_THE_PROJECT` inside the `.bat` files is updated to match your deployment environment).*
+To facilitate a smooth CI/CD pipeline on Windows Cloud Server, we have implemented a custom batch script for automated deployment:
+
 
 ## Option B: Manual Setup (Virtual Environment)
 
