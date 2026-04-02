@@ -108,7 +108,7 @@ To facilitate a smooth CI/CD pipeline on our Windows Cloud Server, we have imple
 - **`start_server.bat`**: A one-click hosting script that automatically navigates to the project directory, cleanly brings down any existing containers, and rebuilds/starts the Docker environment in detached mode. It provides a visual confirmation when the server is successfully running.
 - **`autodeploy.bat`**: A watchdog script that enables continuous deployment. It runs a continuous loop that fetches updates from the remote `main` branch. If it detects that the local code is behind the remote repository, it automatically pulls the latest code, rebuilds the Docker containers, and restarts the services. It checks for updates every 15 minutes to ensure the production environment stays up to date without manual intervention.
 
-*(Note: If utilizing these scripts on a new server, ensure the absolute directory path `cd /d F:\Coding\Projects\pwp\PWP` inside the `.bat` files is updated to match your deployment environment).*
+*(Note: If utilizing these scripts on a new server, ensure the absolute directory path `cd /d X:\FILE_PATH_TO_THE_PROJECT` inside the `.bat` files is updated to match your deployment environment).*
 
 ## Option B: Manual Setup (Virtual Environment)
 
