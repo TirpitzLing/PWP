@@ -8,7 +8,8 @@ info:
     # termsOfService: http://totally.not.placehold.er/
     contact:
         # url: http://totally.not.placehold.er/
-        email: azhou25@student.oulu.fi, tliu25@student.oulu.fi, jling25@student.oulu.fi
+        # email: azhou25@student.oulu.fi, tliu25@student.oulu.fi, jling25@student.oulu.fi
+        name: "Team: azhou25@, tliu25@, jling25@ (student.oulu.fi)"
     license:
         name: Apache 2.0
         url: https://www.apache.org/licenses/LICENSE-2.0.html
