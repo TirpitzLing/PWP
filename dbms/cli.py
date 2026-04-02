@@ -23,7 +23,11 @@ def init_db_command():
 def populate_db_command():
     """Populate the database with initial test data."""
     # check if have data already
-    if User.query.first():
+    has_user = User.query.first()
+    has_ingredient = Ingredient.query.first()
+    has_recipe = Recipe.query.first()
+
+    if has_user and has_ingredient and has_recipe:
         click.echo("Database already populated. Skipping...")
         return
 
