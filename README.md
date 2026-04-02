@@ -10,7 +10,6 @@
 
 **Remember to include all required documentation and HOWTOs, including how to create and populate the database, how to run and test the API, the url to the entrypoint, instructions on how to setup and run the client, instructions on how to setup and run the axiliary service and instructions on how to deploy the api in a production environment**
 
-
 # Overview
 
 The **Daily Bowl Management System (DBMS)** is a **RESTful API** built with **Flask** and **SQLAlchemy**. It is designed to manage users, ingredients, and recipes, allowing users to create, save their favorite recipes, and track nutritional information.
@@ -75,6 +74,7 @@ You can choose to run this API using either **Docker (Option A)** or a **Manual 
 Using Docker simplifies the setup process by containerizing the application and its environment. Ensure you have Docker and Docker Compose installed. You can download Docker from [here](https://www.docker.com/) and with Docker service running, you can follow the instructions below.
 
 **Step 1: Generate SSL Certificates**
+
 Before running Docker, you must generate self-signed SSL certificates for NGINX. Navigate to the root directory and run the provided script:
 - **Windows:** Double-click `generate_cert.bat` or run it in CMD.
 - **macOS/Linux: Enter project root directory** and run `bash generate_cert.sh`.
@@ -102,6 +102,7 @@ To verify the environment is properly configured, perform the following tests:
 3.  **Database Check**: Confirm that the `instance/dbms.db` file is present in the project directory after startup.
 
 **Step 3: Initialize and Populate the Database**
+
 Initialization is handled automatically by the Docker entrypoint. To manually reset or add sample data, run:
 ```bash
 docker compose exec dbms-api flask init-db
@@ -220,7 +221,7 @@ The base path to your application depends on how you started it:
 We use Swagger UI for easy endpoint exploration. To view all available routes (like `/api/users/` or `/api/recipes/`), check required parameters, and test the API directly from your browser, navigate to:
 
 - **Cloud Production Deployment (Docker + NGINX):**
-  > **https://edvic.ddns.net/api/docs (https://your.host.ip/api/docs)**
+  > **https://<your.host.ip>/api/docs**
   > *(Note: Since we use self-signed certificates, please click "Advanced" -> "Proceed/Continue" if your browser shows a security warning.)*
 
 - **Local Manual Setup (Flask dev server):**
@@ -238,3 +239,7 @@ pytest tests/ -v --cov=dbms --cov-report=term-missing
 ```
 
 More information about testing, please refer to this document: [Readme before test](tests/README.md)
+
+# 5. Live Demo
+- Docs: https://edvic.ddns.net/api/docs
+- Base Path: https://edvic.ddns.net

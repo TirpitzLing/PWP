@@ -2,7 +2,9 @@
 FROM python:3.10-slim
 
 # 2. Set environment variables
+# Prevents Python from writing .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1 \
+    # Ensures logs are flushed to the terminal immediately
     PYTHONUNBUFFERED=1 \
     FLASK_APP=dbms
 
@@ -24,8 +26,8 @@ RUN pip install --no-cache-dir .
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
-# 8. Expose the port Gunicorn will run on
+# 8. Expose the internal Gunicorn port
 EXPOSE 8000
 
-# 9. Run the application using GUNICORN with 4 workers instead of flask run
+# 9. Run the application using GUNICORN, 4 workers for better concurrency handling
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "dbms:create_app()"]
