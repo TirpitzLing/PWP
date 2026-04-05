@@ -91,7 +91,7 @@ Navigate to the root directory of the project and run:
 docker compose up
 ```
 
-This will build the image, starts the container (`dbms-api` and `nginx`), and map the API to your machine. Visit `http://127.0.0.1:10013/api/docs` for the documentation.
+This will build the image, starts the container (`dbms-api` and `nginx`), and map the API to your machine. Visit `http://127.0.0.1:10013/api/docs/` for the documentation.
 
 ###  Environment Configuration Check
 To verify the environment is properly configured, perform the following tests:
@@ -242,5 +242,5 @@ pytest tests/ -v --cov=dbms --cov-report=term-missing
 More information about testing, please refer to this document: [Readme before test](tests/README.md)
 
 # 5. Live Demo
-- Docs: https://edvic.ddns.net/api/docs
+- Docs: https://edvic.ddns.net/api/docs/
 - Base Path: https://edvic.ddns.net
