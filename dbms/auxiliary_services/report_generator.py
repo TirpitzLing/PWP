@@ -11,11 +11,11 @@ from pathlib import Path
 from dbms.extensions import db
 from dbms.models import ReportJob, Recipe
 
-STANDARD_INTAKE = {
-    "calories": 2000.0,
-    "carbs": 275.0,
-    "protein": 50.0,
-    "fat": 78.0,
+STANDARD_MEAL = {
+    "calories": 700.0,
+    "carbs": 80.0,
+    "protein": 45.0,
+    "fat": 25.0,
 }
 
 
