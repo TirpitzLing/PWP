@@ -987,3 +987,55 @@ class TestSaveConverter:  # pylint: disable=R0903
         # Force a 404 Not Found error by requesting a non-existent save pair
         with pytest.raises(NotFound):
             conv.to_python("99-99")
+
+
+class TestToken:
+    """Tests for Token collection (login/logout)."""
+
+    URL = "/api/tokens/"
+
+    def test_post_login_success(self, client):
+        """Test successful login returns a new token."""
+        # test user from _populate_db
+        data = {"email": "test@example.com", "pwd": "test-password"}
+        resp = client.post(self.URL, json=data)
+        assert resp.status_code == 201
+        body = json.loads(resp.data)
+        assert "token" in body
+        assert len(body["token"]) == 64
+
+    def test_post_login_invalid_email(self, client):
+        """Test login with non-existent email."""
+        data = {"email": "nonexistent@example.com", "pwd": "test-password"}
+        resp = client.post(self.URL, json=data)
+        assert resp.status_code == 401
+
+    def test_post_login_invalid_pwd(self, client):
+        """Test login with wrong password."""
+        data = {"email": "test@example.com", "pwd": "wrongpwd"}
+        resp = client.post(self.URL, json=data)
+        assert resp.status_code == 401
+
+    def test_post_login_missing_fields(self, client):
+        """Test login missing fields."""
+        data = {"email": "test@example.com"}
+        resp = client.post(self.URL, json=data)
+        assert resp.status_code == 400
+
+    def test_delete_logout_success(self, client):
+        """Test successful logout invalidates the token."""
+        # Client automatically uses valid token "verysafetestkey"
+        resp = client.delete(self.URL)
+        assert resp.status_code == 204
+
+        # The old token should now be invalid
+        # Requesting an endpoint that requires auth (like DELETE /api/tokens/)
+        # with the same old token should fail.
+        resp_after = client.delete(self.URL)
+        assert resp_after.status_code == 401
+
+    def test_delete_logout_unauthorized(self, client):
+        """Test logout with invalid token fails."""
+        resp = client.delete(self.URL, headers={"dbms-api-key": "invalid_key"})
+        assert resp.status_code == 401
+

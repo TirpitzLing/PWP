@@ -369,6 +369,91 @@ components:
                 type: integer
 
 paths:
+    # ---------------- TOKENS (AUTH) ----------------
+    /tokens/:
+        post:
+            tags: [Tokens]
+            summary: Login to get a new API token
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, pwd]
+                            properties:
+                                email:
+                                    type: string
+                                pwd:
+                                    type: string
+                            example:
+                                email: "chef@student.oulu.fi"
+                                pwd: "SecurePassword123!"
+            responses:
+                "201":
+                    description: Token created successfully
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                example:
+                                    token: "ab12cd34ef56..."
+                "400":
+                    description: Bad request (missing email or pwd)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 400
+                                description: "Missing email or password."
+                                name: "Bad Request"
+                "401":
+                    description: Unauthorized (invalid credentials)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Invalid email or password."
+                                name: "Unauthorized"
+                "415":
+                    description: Unsupported Media Type
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
+                "500":
+                    description: Internal Server Error
+        delete:
+            tags: [Tokens]
+            summary: Logout and destroy the current token
+            security:
+                - ApiKeyAuth: []
+            responses:
+                "204":
+                    description: Logout successful, token invalidated
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Authentication required. Please provide a valid dbms-api-key header."
+                                name: "Unauthorized"
+                "500":
+                    description: Internal Server Error
+
     # ---------------- USERS ----------------
     /users/:
         get:

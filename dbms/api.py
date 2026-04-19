@@ -16,6 +16,7 @@ from dbms.resources.recipe_ingredient import (
     RecipeIngredientItem,
 )
 from dbms.resources.save import SaveCollection, SaveItem
+from dbms.resources.token import Token
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -45,6 +46,8 @@ api.add_resource(
 
 api.add_resource(SaveCollection, "/users/<user:user>/saves/")
 api.add_resource(SaveItem, "/users/<user:user>/saves/<recipe:recipe>/")
+
+api.add_resource(Token, "/tokens/")
 
 api.add_resource(IngredientCollection, "/ingredients/")
 api.add_resource(IngredientItem, "/ingredients/<ingredient:ingredient>/")
