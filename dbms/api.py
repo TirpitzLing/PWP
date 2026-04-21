@@ -4,6 +4,7 @@ This module defines the API blueprint and registers the API resources.
 
 from flask import Blueprint
 from flask_restful import Api
+from flask_cors import CORS
 from dbms.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
 from dbms.resources.ingredient import IngredientCollection, IngredientItem
 from dbms.resources.report import (
@@ -20,6 +21,7 @@ from dbms.resources.token import Token
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+CORS(api_bp, expose_headers=["Location"])
 api = Api(api_bp)
 
 
