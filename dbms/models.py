@@ -77,30 +77,31 @@ class User(db.Model):
         """Hash the given API key token for storage."""
         return hashlib.sha256(token.encode()).hexdigest()
 
-    def deserialize(self, doc):
+    def deserialize(self, doc, partial=False):
         """
         Deserialize data from a dictionary to the User object.
 
         Returns the raw API token if a new one is generated.
         """
-        # mandatory
-        self.username = doc["username"]
-        self.email = doc["email"]
-        # this hash uses salting to avoid Credential Stuffing Attack
-        # use PBKDF2 to slow down calculation
-        self.pwd = generate_password_hash(doc["pwd"])
-
-        if "created_at" in doc:
-            self.created_at = datetime.fromisoformat(doc["created_at"])
-
-        # self.created_at = (
-        #     datetime.fromisoformat(doc["created_at"])
-        #     if doc.get("created_at")
-        #     else None
-        # )
-
-        # optional
-        self.allergies = doc.get("allergies")
+        if partial:
+            if "username" in doc:
+                self.username = doc["username"]
+            if "email" in doc:
+                self.email = doc["email"]
+            if "pwd" in doc:
+                self.pwd = generate_password_hash(doc["pwd"])
+            if "allergies" in doc:
+                self.allergies = doc["allergies"]
+        else:
+            # mandatory for create
+            if "username" in doc:
+                self.username = doc["username"]
+            if "email" in doc:
+                self.email = doc["email"]
+            if "pwd" in doc:
+                self.pwd = generate_password_hash(doc["pwd"])
+            # optional
+            self.allergies = doc.get("allergies")
 
         # The logic to generate a strong token using `secrets` module
         # is based on lovelace material.

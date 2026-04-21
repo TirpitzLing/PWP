@@ -116,11 +116,49 @@ class UserItem(Resource):
             )
 
         try:
-            validate(request.json, User.json_schema())
+            schema = User.json_schema()
+            if "pwd" in schema.get("required", []):
+                schema["required"].remove("pwd")
+            validate(request.json, schema)
         except ValidationError as e:
             raise BadRequest(description=str(e)) from e
 
         user.deserialize(request.json)
+        try:
+            db.session.commit()
+        except IntegrityError as exc:
+            db.session.rollback()
+            raise Conflict(
+                description="Username or email already exists"
+            ) from exc
+
+        return Response(status=204)
+
+    @api_key_required
+    def patch(self, user):
+        """
+        Partially update user information.
+        """
+        # check user api key
+        if request.current_user.id != user.id:
+            raise Forbidden(
+                description="You can only update your own profile."
+            )
+
+        # partially update user information
+        if not request.json:
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
+
+        try:
+            schema = User.json_schema()
+            schema["required"] = []
+            validate(request.json, schema)
+        except ValidationError as e:
+            raise BadRequest(description=str(e)) from e
+
+        user.deserialize(request.json, partial=True)
         try:
             db.session.commit()
         except IntegrityError as exc:
