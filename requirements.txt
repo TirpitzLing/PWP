@@ -21,3 +21,4 @@ typing_extensions==4.15.0
 Werkzeug==3.1.5
 flake8
 flask-swagger-ui==4.11.1
+flask-cors

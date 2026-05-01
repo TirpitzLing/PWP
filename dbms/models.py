@@ -6,6 +6,7 @@ RecipeIngredient, and Save, along with their serialization and validation logic.
 it also includes CLI commands for database initialization and population.
 """
 
+import json
 import secrets
 import hashlib
 from datetime import datetime
@@ -45,6 +46,11 @@ class User(db.Model):
     saved_recipes = db.relationship(
         "Save", back_populates="user", cascade="all, delete-orphan"
     )
+    report_jobs = db.relationship(
+        "ReportJob",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     # ingredient_preferences = db.relationship(
     #     "UserIngredientPreference", back_populates="user"
     # )
@@ -71,30 +77,31 @@ class User(db.Model):
         """Hash the given API key token for storage."""
         return hashlib.sha256(token.encode()).hexdigest()
 
-    def deserialize(self, doc):
+    def deserialize(self, doc, partial=False):
         """
         Deserialize data from a dictionary to the User object.
 
         Returns the raw API token if a new one is generated.
         """
-        # mandatory
-        self.username = doc["username"]
-        self.email = doc["email"]
-        # this hash uses salting to avoid Credential Stuffing Attack
-        # use PBKDF2 to slow down calculation
-        self.pwd = generate_password_hash(doc["pwd"])
-
-        if "created_at" in doc:
-            self.created_at = datetime.fromisoformat(doc["created_at"])
-
-        # self.created_at = (
-        #     datetime.fromisoformat(doc["created_at"])
-        #     if doc.get("created_at")
-        #     else None
-        # )
-
-        # optional
-        self.allergies = doc.get("allergies")
+        if partial:
+            if "username" in doc:
+                self.username = doc["username"]
+            if "email" in doc:
+                self.email = doc["email"]
+            if "pwd" in doc:
+                self.pwd = generate_password_hash(doc["pwd"])
+            if "allergies" in doc:
+                self.allergies = doc["allergies"]
+        else:
+            # mandatory for create
+            if "username" in doc:
+                self.username = doc["username"]
+            if "email" in doc:
+                self.email = doc["email"]
+            if "pwd" in doc:
+                self.pwd = generate_password_hash(doc["pwd"])
+            # optional
+            self.allergies = doc.get("allergies")
 
         # The logic to generate a strong token using `secrets` module
         # is based on lovelace material.
@@ -391,3 +398,93 @@ class Save(db.Model):
         }
 
         return schema
+
+
+class ReportJob(db.Model):
+    """Represents a background nutrition report generation job."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    recipe_ids = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(16), nullable=False, default="pending")
+
+    total_calories = db.Column(db.Float)
+    total_carbs = db.Column(db.Float)
+    total_protein = db.Column(db.Float)
+    total_fat = db.Column(db.Float)
+
+    comparison_json = db.Column(db.Text)
+    output_file_path = db.Column(db.String(255))
+    error_message = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, nullable=False)
+    started_at = db.Column(db.DateTime)
+    finished_at = db.Column(db.DateTime)
+
+    user = db.relationship("User", back_populates="report_jobs")
+
+    def serialize(self):
+        """Serialize the ReportJob object to a dictionary."""
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "recipe_ids": json.loads(self.recipe_ids or "[]"),
+            "status": self.status,
+            "total_calories": self.total_calories,
+            "total_carbs": self.total_carbs,
+            "total_protein": self.total_protein,
+            "total_fat": self.total_fat,
+            "comparison": (
+                json.loads(self.comparison_json)
+                if self.comparison_json
+                else None
+            ),
+            "output_file_path": self.output_file_path,
+            "error_message": self.error_message,
+            "created_at": self.created_at.isoformat(),
+            "started_at": (
+                self.started_at.isoformat() if self.started_at else None
+            ),
+            "finished_at": (
+                self.finished_at.isoformat() if self.finished_at else None
+            ),
+        }
+
+    def deserialize(self, doc):
+        """Deserialize data from a dictionary to the report job object."""
+        self.recipe_ids = json.dumps(doc.get("recipe_ids", []))
+        self.status = doc.get("status", "pending")
+        self.total_calories = doc.get("total_calories")
+        self.total_carbs = doc.get("total_carbs")
+        self.total_protein = doc.get("total_protein")
+        self.total_fat = doc.get("total_fat")
+        comparison = doc.get("comparison")
+        self.comparison_json = json.dumps(comparison) if comparison else None
+        self.output_file_path = doc.get("output_file_path")
+        self.error_message = doc.get("error_message")
+
+        if "created_at" in doc:
+            self.created_at = datetime.fromisoformat(doc["created_at"])
+        if "started_at" in doc and doc["started_at"]:
+            self.started_at = datetime.fromisoformat(doc["started_at"])
+        if "finished_at" in doc and doc["finished_at"]:
+            self.finished_at = datetime.fromisoformat(doc["finished_at"])
+
+    @staticmethod
+    def json_schema():
+        """Return the JSON schema for report job validation."""
+        return {
+            "type": "object",
+            "required": ["recipe_ids"],
+            "properties": {
+                "recipe_ids": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                    "minItems": 1,
+                },
+            },
+        }
