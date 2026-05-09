@@ -240,7 +240,7 @@ class Recipe(db.Model):
 
     def serialize(self):
         """Serialize the Recipe object to a dictionary."""
-        return {
+        data = {
             "id": self.id,
             "title": self.title,
             "procedure": self.procedure,
@@ -250,6 +250,9 @@ class Recipe(db.Model):
             "cooking_methods": self.cooking_methods,
             "created_by": self.created_by,
         }
+        if self.creator:
+            data["creator_username"] = self.creator.username
+        return data
 
     def deserialize(self, doc):
         """Deserialize data from a dictionary to the Recipe object."""
