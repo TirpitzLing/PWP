@@ -280,11 +280,22 @@ components:
                     type: number
                 unit:
                     type: string
+                ingredient:
+                    $ref: "#/components/schemas/Ingredient"
             example:
                 recipe_id: 88
                 ingredient_id: 20
                 amount: 300.0
                 unit: "grams"
+                ingredient:
+                    id: 20
+                    name: "Tomato"
+                    img_url: "https://www.walmart.com/ip/Fresh-Slicing-Tomato-Each/44390971"
+                    allergy: null
+                    calories: 18.0
+                    carbs: 3.9
+                    protein: 0.9
+                    fat: 0.2
 
         RecipeIngredientCreate:
             type: object

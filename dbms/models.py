@@ -316,12 +316,15 @@ class RecipeIngredient(db.Model):
 
     def serialize(self):
         """Serialize the RecipeIngredient object to a dictionary."""
-        return {
+        data = {
             "recipe_id": self.recipe_id,
             "ingredient_id": self.ingredient_id,
             "amount": self.amount,
             "unit": self.unit,
         }
+        if self.ingredient:
+            data["ingredient"] = self.ingredient.serialize()
+        return data
 
     def deserialize(self, doc):
         """Deserialize data from a dictionary to the RecipeIngredient object."""
