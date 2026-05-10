@@ -86,6 +86,11 @@ def create_app(test_config=None):
     # register blueprint (common prefix)
     app.register_blueprint(api_bp)
 
+    @app.route('/admin')
+    def admin_dashboard():
+        from flask import redirect
+        return redirect('/static/admin/index.html')
+
     # intercept all http exceptions and return in a json format
     # ref: https://flask.palletsprojects.com/en/stable/errorhandling/
     @app.errorhandler(HTTPException)

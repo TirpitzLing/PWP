@@ -104,7 +104,7 @@ class UserItem(Resource):
         Update user information including password, email, and allergies.
         """
         # check user api key
-        if request.current_user.id != user.id:
+        if request.current_user.id != user.id and request.current_user.username != 'admin':
             raise Forbidden(
                 description="You can only update your own profile."
             )
@@ -140,7 +140,7 @@ class UserItem(Resource):
         Partially update user information.
         """
         # check user api key
-        if request.current_user.id != user.id:
+        if request.current_user.id != user.id and request.current_user.username != 'admin':
             raise Forbidden(
                 description="You can only update your own profile."
             )
@@ -175,7 +175,7 @@ class UserItem(Resource):
         Delete a specific user account from the system.
         """
         # check user api key
-        if request.current_user.id != user.id:
+        if request.current_user.id != user.id and request.current_user.username != 'admin':
             raise Forbidden(
                 description="You can only delete your own account."
             )

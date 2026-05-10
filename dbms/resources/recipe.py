@@ -103,7 +103,7 @@ class RecipeItem(Resource):
         Invalidates cache upon successful update.
         """
         # update a recipe
-        if recipe.created_by != request.current_user.id:
+        if recipe.created_by != request.current_user.id and request.current_user.username != 'admin':
             raise Forbidden(
                 description="You can only update your own recipes."
             )
@@ -132,7 +132,7 @@ class RecipeItem(Resource):
         Requires API-key auth.
         Invalidates cache upon successful deletion.
         """
-        if recipe.created_by != request.current_user.id:
+        if recipe.created_by != request.current_user.id and request.current_user.username != 'admin':
             raise Forbidden(
                 description="You can only delete your own recipes."
             )
