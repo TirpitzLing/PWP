@@ -218,6 +218,7 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer)
     cuisine_type = db.Column(db.String(64))
     cooking_methods = db.Column(db.Text)
+    img_url = db.Column(db.String(255), nullable=True, default=None)
 
     created_by = db.Column(
         db.Integer,
@@ -248,6 +249,7 @@ class Recipe(db.Model):
             "servings": self.servings,
             "cuisine_type": self.cuisine_type,
             "cooking_methods": self.cooking_methods,
+            "img_url": self.img_url,
             "created_by": self.created_by,
         }
         if self.creator:
@@ -261,6 +263,7 @@ class Recipe(db.Model):
         self.servings = doc.get("servings")
         self.cuisine_type = doc.get("cuisine_type")
         self.cooking_methods = doc.get("cooking_methods")
+        self.img_url = doc.get("img_url")
 
         if "created_at" in doc:
             self.created_at = datetime.fromisoformat(doc["created_at"])
@@ -287,6 +290,7 @@ class Recipe(db.Model):
         props["servings"] = {"type": ["integer", "null"]}
         props["cuisine_type"] = {"type": ["string", "null"]}
         props["cooking_methods"] = {"type": ["string", "null"]}
+        props["img_url"] = {"type": ["string", "null"]}
         props["created_by"] = {"type": "integer"}
 
         return schema

@@ -145,6 +145,9 @@ components:
                 cooking_methods:
                     type: string
                     nullable: true
+                img_url:
+                    type: string
+                    nullable: true
                 created_by:
                     type: integer
                 creator_username:
@@ -157,6 +160,7 @@ components:
                 servings: 2
                 cuisine_type: "Chinese"
                 cooking_methods: "Stir-frying"
+                img_url: "https://example.com/recipe.jpg"
                 created_by: 1
                 creator_username: "oulu_chef"
 
@@ -172,11 +176,14 @@ components:
                     type: integer
                 cuisine_type:
                     type: string
+                img_url:
+                    type: string
             example:
                 title: "Tomato and Egg Stir-fry"
                 procedure: "1. Beat the eggs. 2. Chop tomatoes into chunks. 3. Scramble eggs in hot oil and set aside. 4. Stir-fry tomatoes until soft and juicy, return eggs to the pan, season with salt and a pinch of sugar, and serve."
                 servings: 2
                 cuisine_type: "Chinese"
+                img_url: "https://example.com/recipe.jpg"
 
         RecipeUpdate:
             type: object
@@ -187,10 +194,13 @@ components:
                     type: string
                 servings:
                     type: integer
+                img_url:
+                    type: string
             example:
                 title: "Homestyle Tomato and Egg Stir-fry"
                 procedure: "1. Add a splash of water to eggs before beating. 2. Peel and chop tomatoes. 3. Scramble eggs. 4. Sauté scallions, cook tomatoes until soft, mix in eggs, and season."
                 servings: 3
+                img_url: "https://example.com/recipe_updated.jpg"
 
         RecipeNutritionStats:
             type: object
