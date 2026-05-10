@@ -111,6 +111,7 @@ def _populate_db():
             servings=i,
             cuisine_type=f"cuisine-{i}",
             cooking_methods=f"method-{i}",
+            img_url=f"https://example.com/recipe_{i}.jpg",
             created_at=datetime.now(),
             created_by=user.id,
         )
