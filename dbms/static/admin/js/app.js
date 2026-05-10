@@ -74,26 +74,19 @@ const app = {
 
                 if (res.ok) {
                     const data = await res.json();
-                    const token = data.token;
-
-                    // Verify if the logged-in user is the admin
-                    // (We fetch users and check if this email belongs to username 'admin')
-                    const usersRes = await fetch(`${API_BASE}/users/`);
-                    const users = await usersRes.json();
-                    const adminUser = users.find(u => u.email === email && u.username === 'admin');
                     
-                    if (!adminUser) {
+                    if (data.username !== 'admin') {
                         // Cancel token if not admin
                         await fetch(`${API_BASE}/tokens/`, {
                             method: 'DELETE',
-                            headers: { 'dbms-api-key': token }
+                            headers: { 'dbms-api-key': data.token }
                         });
                         errorMsg.textContent = 'Only admin account is allowed.';
                         return;
                     }
 
-                    this.apiKey = token;
-                    this.currentUser = adminUser;
+                    this.apiKey = data.token;
+                    this.currentUser = { id: data.id, username: data.username, email: data.email };
                     localStorage.setItem('admin_api_key', this.apiKey);
                     errorMsg.textContent = '';
                     this.showView('dashboard-view');

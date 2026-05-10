@@ -34,8 +34,13 @@ class Token(Resource):
         user.api_key = User.hash_key(raw_token)
         db.session.commit()
 
-        # Return the new token
-        response_data = {"token": raw_token}
+        # Return the new token and username
+        response_data = {
+            "token": raw_token,
+            "username": user.username,
+            "email": user.email,
+            "id": user.id
+        }
         
         return Response(
             json.dumps(response_data),
