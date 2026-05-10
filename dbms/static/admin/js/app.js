@@ -60,36 +60,39 @@ const app = {
     setupForms() {
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('login-error');
             
-            if (username !== 'admin') {
-                errorMsg.textContent = 'Only admin account is allowed.';
-                return;
-            }
-
             try {
-                // First, find the admin user's email
-                const usersRes = await fetch(`${API_BASE}/users/`);
-                const users = await usersRes.json();
-                const adminUser = users.find(u => u.username === 'admin');
-                
-                if (!adminUser) {
-                    errorMsg.textContent = 'Admin user not found in the system.';
-                    return;
-                }
-
-                // Then login
+                // Login using email directly
                 const res = await fetch(`${API_BASE}/tokens/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: adminUser.email, pwd: password })
+                    body: JSON.stringify({ email: email, pwd: password })
                 });
 
                 if (res.ok) {
                     const data = await res.json();
-                    this.apiKey = data.token;
+                    const token = data.token;
+
+                    // Verify if the logged-in user is the admin
+                    // (We fetch users and check if this email belongs to username 'admin')
+                    const usersRes = await fetch(`${API_BASE}/users/`);
+                    const users = await usersRes.json();
+                    const adminUser = users.find(u => u.email === email && u.username === 'admin');
+                    
+                    if (!adminUser) {
+                        // Cancel token if not admin
+                        await fetch(`${API_BASE}/tokens/`, {
+                            method: 'DELETE',
+                            headers: { 'dbms-api-key': token }
+                        });
+                        errorMsg.textContent = 'Only admin account is allowed.';
+                        return;
+                    }
+
+                    this.apiKey = token;
                     this.currentUser = adminUser;
                     localStorage.setItem('admin_api_key', this.apiKey);
                     errorMsg.textContent = '';
