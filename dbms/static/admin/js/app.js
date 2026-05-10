@@ -153,6 +153,7 @@ const app = {
     renderTable(type, data) {
         const tbody = document.getElementById(`${type}-tbody`);
         tbody.innerHTML = '';
+        const singularType = type.slice(0, -1);
         
         data.forEach(item => {
             const tr = document.createElement('tr');
@@ -183,8 +184,8 @@ const app = {
 
             content += `
                 <td class="actions-cell">
-                    ${type === 'users' ? '' : `<button class="btn btn-small" onclick="app.editItem('${type}', ${item.id})">Edit</button>`}
-                    <button class="btn btn-small btn-danger" onclick="app.deleteItem('${type}', ${item.id})">Delete</button>
+                    <button class="btn btn-small" onclick="app.editItem('${singularType}', ${item.id})">Edit</button>
+                    <button class="btn btn-small btn-danger" onclick="app.deleteItem('${singularType}', ${item.id})">Delete</button>
                 </td>
             `;
             tr.innerHTML = content;
@@ -194,7 +195,7 @@ const app = {
 
     async editItem(type, id) {
         try {
-            const res = await this.fetchAPI(`/${type}/${id}/`);
+            const res = await this.fetchAPI(`/${type}s/${id}/`);
             if (res.ok) {
                 const item = await res.json();
                 this.populateForm(type, item);
@@ -291,12 +292,12 @@ const app = {
     },
 
     async deleteItem(type, id) {
-        if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
+        if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
         
         try {
-            const res = await this.fetchAPI(`/${type}/${id}/`, { method: 'DELETE' });
+            const res = await this.fetchAPI(`/${type}s/${id}/`, { method: 'DELETE' });
             if (res.ok || res.status === 204) {
-                this.loadData(type);
+                this.loadData(`${type}s`);
             } else {
                 const data = await res.json();
                 alert(`Error: ${data.description || 'Failed to delete'}`);
