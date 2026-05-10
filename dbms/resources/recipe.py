@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from flask import Response, request, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
+from sqlalchemy import func
 
 # from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import (
@@ -33,13 +34,44 @@ class RecipeCollection(Resource):
     def get(self):
         """
         Retrieve a paginated list of recipes.
+        Supports filtering by cuisine_type and aggregating categories.
         Uses limit and offset for pagination.
         """
-        # get limit and offset from query string
+        # aggregate
+        if request.args.get("aggregate") == "categories":
+            results = (
+                db.session.query(
+                    Recipe.cuisine_type,
+                    func.count(Recipe.id).label("recipe_count"),
+                )
+                .group_by(Recipe.cuisine_type)
+                .all()
+            )
+
+            categories = [
+                {
+                    "cuisine_type": row.cuisine_type,
+                    "recipe_count": row.recipe_count,
+                }
+                for row in results
+                if row.cuisine_type
+            ]
+            return {"categories": categories}
+
+        # page
         limit, offset = get_pagination_args()
 
-        # apply to query
-        recipes = Recipe.query.limit(limit).offset(offset).all()
+        query = Recipe.query
+
+        # return by cuisine type
+        cuisine_type_filter = request.args.get("cuisine_type")
+        if cuisine_type_filter:
+            query = query.filter(
+                Recipe.cuisine_type.ilike(cuisine_type_filter)
+            )
+
+        # return
+        recipes = query.limit(limit).offset(offset).all()
         return [r.serialize() for r in recipes]
 
     @api_key_required
@@ -103,7 +135,10 @@ class RecipeItem(Resource):
         Invalidates cache upon successful update.
         """
         # update a recipe
-        if recipe.created_by != request.current_user.id and request.current_user.username != 'admin':
+        if (
+            recipe.created_by != request.current_user.id
+            and request.current_user.username != "admin"
+        ):
             raise Forbidden(
                 description="You can only update your own recipes."
             )
@@ -132,7 +167,10 @@ class RecipeItem(Resource):
         Requires API-key auth.
         Invalidates cache upon successful deletion.
         """
-        if recipe.created_by != request.current_user.id and request.current_user.username != 'admin':
+        if (
+            recipe.created_by != request.current_user.id
+            and request.current_user.username != "admin"
+        ):
             raise Forbidden(
                 description="You can only delete your own recipes."
             )
