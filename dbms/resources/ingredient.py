@@ -97,3 +97,13 @@ class IngredientItem(Resource):
         cache.clear()
 
         return Response(status=204)
+
+    def delete(self, ingredient):
+        """
+        Delete a specific ingredient from the database.
+        Invalidates cache upon successful deletion.
+        """
+        db.session.delete(ingredient)
+        db.session.commit()
+        cache.clear()
+        return Response(status=204)

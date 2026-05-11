@@ -62,6 +62,7 @@ def populate_db_command():
         procedure="1. Chop tomatoes. 2. Beat eggs. 3. Fry together with salt.",
         servings=2,
         cuisine_type="Chinese",
+        img_url="https://images.getrecipekit.com/20231103000214-andy-20cooks-20-20tomato-20egg-20stir-fry.jpg",
         created_at=datetime.now(timezone.utc),
         created_by=admin.id,
     )

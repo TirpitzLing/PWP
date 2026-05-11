@@ -77,30 +77,31 @@ class User(db.Model):
         """Hash the given API key token for storage."""
         return hashlib.sha256(token.encode()).hexdigest()
 
-    def deserialize(self, doc):
+    def deserialize(self, doc, partial=False):
         """
         Deserialize data from a dictionary to the User object.
 
         Returns the raw API token if a new one is generated.
         """
-        # mandatory
-        self.username = doc["username"]
-        self.email = doc["email"]
-        # this hash uses salting to avoid Credential Stuffing Attack
-        # use PBKDF2 to slow down calculation
-        self.pwd = generate_password_hash(doc["pwd"])
-
-        if "created_at" in doc:
-            self.created_at = datetime.fromisoformat(doc["created_at"])
-
-        # self.created_at = (
-        #     datetime.fromisoformat(doc["created_at"])
-        #     if doc.get("created_at")
-        #     else None
-        # )
-
-        # optional
-        self.allergies = doc.get("allergies")
+        if partial:
+            if "username" in doc:
+                self.username = doc["username"]
+            if "email" in doc:
+                self.email = doc["email"]
+            if "pwd" in doc:
+                self.pwd = generate_password_hash(doc["pwd"])
+            if "allergies" in doc:
+                self.allergies = doc["allergies"]
+        else:
+            # mandatory for create
+            if "username" in doc:
+                self.username = doc["username"]
+            if "email" in doc:
+                self.email = doc["email"]
+            if "pwd" in doc:
+                self.pwd = generate_password_hash(doc["pwd"])
+            # optional
+            self.allergies = doc.get("allergies")
 
         # The logic to generate a strong token using `secrets` module
         # is based on lovelace material.
@@ -217,6 +218,7 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer)
     cuisine_type = db.Column(db.String(64))
     cooking_methods = db.Column(db.Text)
+    img_url = db.Column(db.String(255), nullable=True, default=None)
 
     created_by = db.Column(
         db.Integer,
@@ -239,7 +241,7 @@ class Recipe(db.Model):
 
     def serialize(self):
         """Serialize the Recipe object to a dictionary."""
-        return {
+        data = {
             "id": self.id,
             "title": self.title,
             "procedure": self.procedure,
@@ -247,8 +249,12 @@ class Recipe(db.Model):
             "servings": self.servings,
             "cuisine_type": self.cuisine_type,
             "cooking_methods": self.cooking_methods,
+            "img_url": self.img_url,
             "created_by": self.created_by,
         }
+        if self.creator:
+            data["creator_username"] = self.creator.username
+        return data
 
     def deserialize(self, doc):
         """Deserialize data from a dictionary to the Recipe object."""
@@ -257,6 +263,7 @@ class Recipe(db.Model):
         self.servings = doc.get("servings")
         self.cuisine_type = doc.get("cuisine_type")
         self.cooking_methods = doc.get("cooking_methods")
+        self.img_url = doc.get("img_url")
 
         if "created_at" in doc:
             self.created_at = datetime.fromisoformat(doc["created_at"])
@@ -283,6 +290,7 @@ class Recipe(db.Model):
         props["servings"] = {"type": ["integer", "null"]}
         props["cuisine_type"] = {"type": ["string", "null"]}
         props["cooking_methods"] = {"type": ["string", "null"]}
+        props["img_url"] = {"type": ["string", "null"]}
         props["created_by"] = {"type": "integer"}
 
         return schema
@@ -315,12 +323,15 @@ class RecipeIngredient(db.Model):
 
     def serialize(self):
         """Serialize the RecipeIngredient object to a dictionary."""
-        return {
+        data = {
             "recipe_id": self.recipe_id,
             "ingredient_id": self.ingredient_id,
             "amount": self.amount,
             "unit": self.unit,
         }
+        if self.ingredient:
+            data["ingredient"] = self.ingredient.serialize()
+        return data
 
     def deserialize(self, doc):
         """Deserialize data from a dictionary to the RecipeIngredient object."""

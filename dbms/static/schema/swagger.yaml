@@ -145,8 +145,13 @@ components:
                 cooking_methods:
                     type: string
                     nullable: true
+                img_url:
+                    type: string
+                    nullable: true
                 created_by:
                     type: integer
+                creator_username:
+                    type: string
             example:
                 id: 88
                 title: "Tomato and Egg Stir-fry"
@@ -155,7 +160,9 @@ components:
                 servings: 2
                 cuisine_type: "Chinese"
                 cooking_methods: "Stir-frying"
+                img_url: "https://example.com/recipe.jpg"
                 created_by: 1
+                creator_username: "oulu_chef"
 
         RecipeCreate:
             type: object
@@ -169,11 +176,14 @@ components:
                     type: integer
                 cuisine_type:
                     type: string
+                img_url:
+                    type: string
             example:
                 title: "Tomato and Egg Stir-fry"
                 procedure: "1. Beat the eggs. 2. Chop tomatoes into chunks. 3. Scramble eggs in hot oil and set aside. 4. Stir-fry tomatoes until soft and juicy, return eggs to the pan, season with salt and a pinch of sugar, and serve."
                 servings: 2
                 cuisine_type: "Chinese"
+                img_url: "https://example.com/recipe.jpg"
 
         RecipeUpdate:
             type: object
@@ -184,10 +194,13 @@ components:
                     type: string
                 servings:
                     type: integer
+                img_url:
+                    type: string
             example:
                 title: "Homestyle Tomato and Egg Stir-fry"
                 procedure: "1. Add a splash of water to eggs before beating. 2. Peel and chop tomatoes. 3. Scramble eggs. 4. Sauté scallions, cook tomatoes until soft, mix in eggs, and season."
                 servings: 3
+                img_url: "https://example.com/recipe_updated.jpg"
 
         RecipeNutritionStats:
             type: object
@@ -280,11 +293,22 @@ components:
                     type: number
                 unit:
                     type: string
+                ingredient:
+                    $ref: "#/components/schemas/Ingredient"
             example:
                 recipe_id: 88
                 ingredient_id: 20
                 amount: 300.0
                 unit: "grams"
+                ingredient:
+                    id: 20
+                    name: "Tomato"
+                    img_url: "https://www.walmart.com/ip/Fresh-Slicing-Tomato-Each/44390971"
+                    allergy: null
+                    calories: 18.0
+                    carbs: 3.9
+                    protein: 0.9
+                    fat: 0.2
 
         RecipeIngredientCreate:
             type: object
@@ -335,6 +359,24 @@ components:
                     type: integer
             example:
                 recipe_id: 88
+        RecipeCategoryAggregation:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            cuisine_type:
+                                type: string
+                            recipe_count:
+                                type: integer
+            example:
+                categories:
+                    - cuisine_type: "Italian"
+                      recipe_count: 5
+                    - cuisine_type: "Chinese"
+                      recipe_count: 3
 
     parameters:
         LimitParam:
@@ -369,6 +411,87 @@ components:
                 type: integer
 
 paths:
+    # ---------------- TOKENS (AUTH) ----------------
+    /tokens/:
+        post:
+            tags: [Tokens]
+            summary: Login to get a new API token
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, pwd]
+                            properties:
+                                email:
+                                    type: string
+                                pwd:
+                                    type: string
+                            example:
+                                email: "chef@student.oulu.fi"
+                                pwd: "SecurePassword123!"
+            responses:
+                "201":
+                    description: Token created successfully
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                example:
+                                    token: "ab12cd34ef56..."
+                "400":
+                    description: Bad request (missing email or pwd)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 400
+                                description: "Missing email or password."
+                                name: "Bad Request"
+                "401":
+                    description: Unauthorized (invalid credentials)
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Invalid email or password."
+                                name: "Unauthorized"
+                "415":
+                    description: Unsupported Media Type
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
+        delete:
+            tags: [Tokens]
+            summary: Logout and destroy the current token
+            security:
+                - ApiKeyAuth: []
+            responses:
+                "204":
+                    description: Logout successful, token invalidated
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Authentication required. Please provide a valid dbms-api-key header."
+                                name: "Unauthorized"
+
     # ---------------- USERS ----------------
     /users/:
         get:
@@ -396,8 +519,6 @@ paths:
                                 code: 400
                                 description: "Invalid pagination parameters. Limit and offset must be non-negative."
                                 name: "Bad Request"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Users]
             summary: Register a new user
@@ -450,8 +571,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     /users/{user}/:
         get:
@@ -476,8 +595,6 @@ paths:
                                 code: 404
                                 description: "User with id 42 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         put:
             tags: [Users]
             summary: Update user profile
@@ -554,8 +671,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         delete:
             tags: [Users]
             summary: Delete user account
@@ -596,8 +711,6 @@ paths:
                                 code: 404
                                 description: "User with id 42 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     /users/{user}/recipes/:
         get:
@@ -624,8 +737,6 @@ paths:
                                 code: 404
                                 description: "User with id 42 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- SAVES ----------------
     /users/{user}/saves/:
@@ -675,8 +786,6 @@ paths:
                                 code: 404
                                 description: "User with id 42 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Saves]
             summary: Save a recipe to collection
@@ -749,8 +858,6 @@ paths:
                                 code: 409
                                 description: "Recipe already saved by this user"
                                 name: "Conflict"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     /users/{user}/saves/{recipe}/:
         delete:
@@ -794,26 +901,37 @@ paths:
                                 code: 404
                                 description: "Save with id 42-88 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- RECIPES ----------------
     /recipes/:
         get:
             tags: [Recipes]
-            summary: Get paginated recipes
+            summary: Get paginated recipes, filter by cuisine type, or get aggregated categories
             parameters:
                 - $ref: "#/components/parameters/LimitParam"
                 - $ref: "#/components/parameters/OffsetParam"
+                - name: aggregate
+                  in: query
+                  description: "If set to 'categories', returns an aggregation of recipe counts by cuisine_type. (Ignores limit and offset)"
+                  schema:
+                      type: string
+                      enum: [categories]
+                - name: cuisine_type
+                  in: query
+                  description: "Filter the list of recipes by a specific cuisine type (e.g., Italian)."
+                  schema:
+                      type: string
             responses:
                 "200":
-                    description: List of recipes
+                    description: A list of recipes or an aggregation of categories
                     content:
                         application/json:
                             schema:
-                                type: array
-                                items:
-                                    $ref: "#/components/schemas/Recipe"
+                                oneOf:
+                                    - type: array
+                                      items:
+                                          $ref: "#/components/schemas/Recipe"
+                                    - $ref: "#/components/schemas/RecipeCategoryAggregation"
                 "400":
                     description: Bad Request (Invalid pagination parameters)
                     content:
@@ -824,61 +942,6 @@ paths:
                                 code: 400
                                 description: "Invalid pagination parameters. Limit and offset must be non-negative."
                                 name: "Bad Request"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
-        post:
-            tags: [Recipes]
-            summary: Create a new recipe
-            security:
-                - ApiKeyAuth: []
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: "#/components/schemas/RecipeCreate"
-            responses:
-                "201":
-                    description: Recipe created
-                    headers:
-                        Location:
-                            description: URI of the newly created recipe
-                            schema:
-                                type: string
-                                example: /api/recipes/88
-                "400":
-                    description: Bad Request
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                            example:
-                                code: 400
-                                description: "JSON Schema validation failed."
-                                name: "Bad Request"
-                "401":
-                    description: Unauthorized
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                            example:
-                                code: 401
-                                description: "Invalid API key."
-                                name: "Unauthorized"
-                "415":
-                    description: Unsupported Media Type
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/ErrorResponse"
-                            example:
-                                code: 415
-                                description: "Request payload must be JSON"
-                                name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
-
     /recipes/{recipe}/:
         get:
             tags: [Recipes]
@@ -902,8 +965,6 @@ paths:
                                 code: 404
                                 description: "Recipe with id 88 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         put:
             tags: [Recipes]
             summary: Update a recipe
@@ -970,8 +1031,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         delete:
             tags: [Recipes]
             summary: Delete a recipe
@@ -1012,8 +1071,6 @@ paths:
                                 code: 404
                                 description: "Recipe with id 88 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     /recipes/{recipe}/nutrition/:
         get:
@@ -1038,8 +1095,6 @@ paths:
                                 code: 404
                                 description: "Recipe with id 88 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- INGREDIENTS ----------------
     /ingredients/:
@@ -1068,8 +1123,6 @@ paths:
                                 code: 400
                                 description: "Invalid pagination parameters. Limit and offset must be non-negative."
                                 name: "Bad Request"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Ingredients]
             summary: Add a new ingredient to database
@@ -1108,8 +1161,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     /ingredients/{ingredient}/:
         get:
@@ -1134,8 +1185,6 @@ paths:
                                 code: 404
                                 description: "Ingredient with id 20 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         put:
             tags: [Ingredients]
             summary: Update ingredient details
@@ -1180,8 +1229,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     # ---------------- RECIPE INGREDIENTS ----------------
     /recipes/{recipe}/ingredients/:
@@ -1209,8 +1256,6 @@ paths:
                                 code: 404
                                 description: "Recipe with id 88 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         post:
             tags: [Recipe Ingredients]
             summary: Add an ingredient to a recipe
@@ -1293,8 +1338,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
 
     /recipes/{recipe}/ingredients/{ingredient}/:
         put:
@@ -1364,8 +1407,6 @@ paths:
                                 code: 415
                                 description: "Request payload must be JSON."
                                 name: "Unsupported Media Type"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)
         delete:
             tags: [Recipe Ingredients]
             summary: Remove an ingredient from a recipe
@@ -1407,5 +1448,3 @@ paths:
                                 code: 404
                                 description: "Recipe with id 88 not found."
                                 name: "Not Found"
-                "500":
-                    description: Internal Server Error (Database failure or unexpected server error)

@@ -70,11 +70,11 @@ Other libraries used:
 - [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/14/orm/tutorial.html)
 - [SQLite Official Documentation](https://www.sqlite.org/docs.html)
 
-# 2. How to Setup and Run the Application
+# 2. How to Setup, Run and Deploy the Application
 
 You can choose to run this API using either **Docker (Option A)** or a **Manual Python Virtual Environment (Option B)**.
 
-## Option A: Run using Docker (Recommended)
+## Option A: Run and Deploy using Docker (Recommended)
 
 Using Docker simplifies the setup process by containerizing the application and its environment. Ensure you have Docker and Docker Compose installed. You can download Docker from [here](https://www.docker.com/) and with Docker service running, you can follow the instructions below.
 
@@ -87,7 +87,36 @@ Before running Docker, you must generate self-signed SSL certificates for NGINX.
 
 _(This creates `server.crt` and `server.key` inside the `nginx/certs/` folder)._
 
-**Step 2: Build and Start Containers**
+**Step 2: Configure Port Forwarding on Deployment Server**
+
+For the API server to be accessible externally, you must obtain a public IP address from your hosting provider. As an alternative, the application can be deployed on a personal computer configured with public IP access. 
+
+Here is an example on how to deploy the Docker container on a Windows operating system using a public IP:
+
+ - **Port Forwarding(Router Settings)**: 
+   - **Find your Local IP**: Open Command Prompt (cmd) on your Windows PC and type `ipconfig`. Note down your IPv4 Address (e.g., 192.168.1.x).
+   - **Access Router Admin Panel**: Open a web browser and enter your router's default gateway address (usually 192.168.1.1 or 192.168.0.1), this might varies on your router brands and settings. Log in with your admin credentials.
+   - **Create a Port Forwarding Rule**: Locate the "Port Forwarding" section in your router settings.
+   - **Map the Ports**: Add a new rule to forward external traffic to your PC.
+     - **Internal IP**: Enter your Windows PC's IPv4 address.
+     - **Internal/External Port**: Enter the ports for your configuration. In our setup, set the External Port to 443 and the Internal Port to 10013 (the port the Docker container listens to). Note: Using standard external ports (like 80 for HTTP or 443 for HTTPS) allows access via the URL without appending a port number. If a custom port is used, it must be included in the domain address.
+     - **Protocol**: Select TCP.
+   - **Save and apply the changes.**
+ - **Enable ports in firewall settings(Windows Defender Firewall)**:
+   - Open the Start menu, search for Windows Defender Firewall, and open it.
+   - Click on Advanced settings on the left panel to open "Windows Defender Firewall with Advanced Security".
+   - Select Inbound Rules from the left pane, then click New Rule... on the right panel.
+   - **Rule Type**: Select Port and click Next.
+   - **Protocol and Ports**: Select TCP and specific local ports. Enter the port number your backend is running on (e.g., 80, 443, 10013), then click Next.
+   - **Action**: Select Allow the connection and click Next.
+   - **Profile**: Leave all profiles (Domain, Private, Public) checked, or select according to your network security preference.
+   - **Name**: Give your rule a recognizable name (e.g., Docker Backend API) and **click Finis**h.
+
+Note: If your public IP is dynamic, it is highly recommended to set up a DDNS (Dynamic DNS) service, to bind your changing public IP to a fixed domain name.
+
+
+
+**Step 3: Build and Start Containers**
 
 Navigate to the root directory of the project and run:
 
@@ -108,7 +137,7 @@ To verify the environment is properly configured, perform the following tests:
       _(Expected: `HTTP/1.1 200 OK`)_
 3.  **Database Check**: Confirm that the `instance/dbms.db` file is present in the project directory after startup.
 
-**Step 3: Initialize and Populate the Database**
+**Step 4: Initialize and Populate the Database**
 
 Initialization is handled automatically by the Docker entrypoint. To manually reset or add sample data, run:
 
@@ -135,7 +164,7 @@ After the command `populate-db` is executed, the terminal will output an Admin A
 
 To facilitate a smooth CI/CD pipeline on Windows Cloud Server, we have implemented a custom batch script for automated deployment:
 
-## Option B: Manual Setup (Virtual Environment)
+## Option B: Manual Setup Locally (Virtual Environment)
 
 To install the dependencies and set up the framework safely, it's highly recommended that you use a virtual environment. The Python version we're using is **Python 3.10**.
 
