@@ -88,11 +88,26 @@ Lastly, the Spoonacular API presented in the deliverable 0 was discussed and sev
 
 ### Action points
 
-_List here the actions points discussed with assistants_
+- Deployment details such as port forwarding etc. should be put in to documents.
+
+- Remove the 500 Internal Server Error status code from the Swagger documentation, as it represents an uncontrolled server error and should never be exposed as an expected API response.
+
+- Implement full connectedness in the API responses by returning the full URL to related resources (e.g., the recipe URL) instead of just the resource ID. This ensures the client does not break if the server's URL architecture changes in the future.
+
+- Ensure that for PUT requests, the entire request representation (including all user data) is sent by the client, rather than just partial data.
+
+- Prepare for the final one-hour meeting in May. This meeting will cover a demo of the client, an external or additional service, and a review of updates made to previous deliverables.
+
+- Complete the final reflection and evaluation deliverable individually; this specific section is not group work.
 
 ### Notes
 
-Add here notes that you consider important. This is not mandatory
+- The teacher advised against deploying on Windows and suggested using Linux with a process control system like Supervisor. However, the current Docker implementation utilizing health checks and automatic restarts is functional.
+
+- The Swagger API documentation is properly organized as a single file within the static main folder.
+
+- When returning a Location header after successfully creating a resource, it is not necessary to return additional resource details in the response body, as the client can simply issue a GET request to the provided URL.
+
 
 ## Final meeting
 
