@@ -56,17 +56,29 @@ Lastly, the Spoonacular API presented in the deliverable 0 was discussed and sev
 
 ## Meeting 3.
 
-- **DATE:**
-- **PARTICIPANTS:**
-- **TEACHER:**
+- **DATE:** 2026/03/10
+- **PARTICIPANTS:** Anqi Zhou, Junxuan Ling, Tianyi Liu
+- **TEACHER:** Ivan Sanchez
 
 ### Action points
 
-_List here the actions points discussed with assistants_
+- Move the Swagger/API documentation implementation to the scope of Deliverable 4, as it belongs to the next phase.
+- Ensure "connectedness" is properly implemented for Deliverable 4.
+- Check the remaining uncovered lines in the test coverage (e.g., 400 bad request errors), though it was noted Flask handles some unsupported media types automatically.
 
 ### Notes
 
-Add here notes that you consider important. This is not mandatory
+- HTTP Methods: The distinction between PUT and PATCH was clarified. PUT must be used when sending the complete resource representation, whereas PATCH should be used for partial modifications (e.g., updating only allergy information).
+
+- Connectedness / HATEOAS: While full HATEOAS is not strictly required, resource connectedness is expected for the next deliverable. Responses should allow the client to navigate to related resources via links.
+
+- Authentication: The API key authentication implemented via decorators was reviewed and approved. It correctly validates permissions rather than depending strictly on the user sending the request.
+
+- Testing & AI Usage: Using AI (like Gemini) to generate tests is encouraged and considered a perfect use case, provided the tests are verified through linters, high coverage (currently verified at >94%), and manual review.
+
+- Linting: The team is using flake8 instead of pylint. The teacher noted it is less strict but acceptable.
+
+- Caching: The caching strategy was reviewed. Caching recipes and recipe collections makes sense because they are not modified frequently. Attribute searching (like limit/offset) does not need to be cached or fully implemented due to the already wide scope of the project.
 
 ## Midterm meeting
 
