@@ -29,6 +29,21 @@ services:
       start_period: 40s
     depends_on:
       - rabbitmq
+
+  # Background worker that consumes jobs from RabbitMQ queue report_jobs
+  report-worker:
+    build: .
+    container_name: dbms-report-worker
+    restart: always
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
+    command: >
+      sh -c "python -m dbms.auxiliary_services.report_generator"
+    volumes:
+      - .:/app
+    depends_on:
+      - rabbitmq
+      - dbms-api
   
   # Reverse Proxy & Security
   nginx:

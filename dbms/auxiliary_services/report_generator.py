@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import json
 import os
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pika
+
+from dbms import create_app
 from dbms.extensions import db
 from dbms.models import ReportJob, Recipe
 
-STANDARD_MEAL = {
+STANDARD_INTAKE = {
     "calories": 700.0,
     "carbs": 80.0,
     "protein": 45.0,
@@ -139,9 +141,7 @@ def compare_to_standard(
     return comparison
 
 
-def _build_report_lines(
-    job: NutritionReportJob, recipes: list[Recipe]
-) -> list[str]:
+def _build_report_lines(job: ReportJob, recipes: list[Recipe]) -> list[str]:
     """Build the text content that will be written to the PDF."""
     totals = calculate_totals(recipes)
     comparison = compare_to_standard(totals)
@@ -181,11 +181,7 @@ def _build_report_lines(
     return lines
 
 
-def _render_pdf(
-    job: NutritionReportJob,
-    recipes: list[Recipe],
-    output_path: str,
-) -> None:
+def _render_pdf(job: ReportJob, recipes: list[Recipe], output_path: str) -> None:
     """Render the PDF file for a completed job."""
     lines = _build_report_lines(job, recipes)
     pdf_bytes = _build_pdf_bytes(lines)
@@ -245,33 +241,51 @@ def process_job(job: ReportJob, instance_path: str) -> ReportJob:
     return job
 
 
-def process_pending_jobs_once(instance_path: str) -> int:
-    """Process all currently pending jobs once and return the count."""
-    processed = 0
-    pending_jobs = (
-        ReportJob.query.filter_by(status="pending")
-        .order_by(ReportJob.created_at.asc())
-        .all()
-    )
+def handle_report_job(ch, method, properties, body, instance_path: str):
+    """Handle a single RabbitMQ message from the report_jobs queue."""
+    job = None
 
-    for job in pending_jobs:
+    try:
+        payload = json.loads(body.decode("utf-8"))
+        job_id = payload["job_id"]
+        job = ReportJob.query.get(job_id)
+
+        if job is None:
+            raise ValueError(f"Report job {job_id} not found.")
+
         process_job(job, instance_path)
-        processed += 1
-
-    return processed
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception as exc:  # pragma: no cover - defensive consumer failure
+        if job is not None:
+            job.status = "failed"
+            job.error_message = str(exc)
+            job.finished_at = datetime.now(timezone.utc)
+            db.session.commit()
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 
 def run_worker(poll_interval: int = 5) -> None:
-    """Run the report worker loop until interrupted."""
-    from dbms import create_app
+    """Consume report jobs from the RabbitMQ report_jobs queue."""
+    del poll_interval
 
     app = create_app()
+    rabbitmq_url = os.getenv(
+        "RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F"
+    )
 
     with app.app_context():
-        while True:
-            processed = process_pending_jobs_once(app.instance_path)
-            if processed == 0:
-                time.sleep(poll_interval)
+        parameters = pika.URLParameters(rabbitmq_url)
+        connection = pika.BlockingConnection(parameters)
+        channel = connection.channel()
+        channel.queue_declare(queue="report_jobs", durable=True)
+        channel.basic_qos(prefetch_count=1)
+        channel.basic_consume(
+            queue="report_jobs",
+            on_message_callback=lambda ch, method, properties, body: handle_report_job(
+                ch, method, properties, body, app.instance_path
+            ),
+        )
+        channel.start_consuming()
 
 
 if __name__ == "__main__":

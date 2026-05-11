@@ -36,7 +36,7 @@ def get_pagination_args(default_limit=10, default_offset=0):
     return limit, offset
 
 
-def publish_report_job(job_id, queue_name="report"):
+def publish_report_job(job_id, queue_name="report_jobs"):
     """Publish a report job id to a RabbitMQ queue."""
     rabbitmq_url = os.getenv(
         "RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F"
