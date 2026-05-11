@@ -2,6 +2,10 @@
 Utility functions for the DBMS API.
 """
 
+import json
+import os
+
+import pika
 from flask import request
 from werkzeug.exceptions import BadRequest
 
@@ -30,3 +34,27 @@ def get_pagination_args(default_limit=10, default_offset=0):
         )
 
     return limit, offset
+
+
+def publish_report_job(job_id, queue_name="report"):
+    """Publish a report job id to a RabbitMQ queue."""
+    rabbitmq_url = os.getenv(
+        "RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F"
+    )
+
+    try:
+        parameters = pika.URLParameters(rabbitmq_url)
+        connection = pika.BlockingConnection(parameters)
+        channel = connection.channel()
+        channel.queue_declare(queue=queue_name, durable=True)
+        channel.basic_publish(
+            exchange="",
+            routing_key=queue_name,
+            body=json.dumps({"job_id": job_id}),
+            properties=pika.BasicProperties(delivery_mode=2),
+        )
+        connection.close()
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to publish report job to queue '{queue_name}': {exc}"
+        ) from exc

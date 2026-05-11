@@ -8,6 +8,7 @@ from dbms.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
 from dbms.resources.ingredient import IngredientCollection, IngredientItem
 from dbms.resources.report import (
     Report,
+    ReportItem,
     ReportDownload,
 )
 from dbms.resources.user import UserCollection, UserItem, UserRecipeCollection
@@ -39,6 +40,7 @@ api.add_resource(UserCollection, "/users/")
 api.add_resource(UserItem, "/users/<user:user>/")
 api.add_resource(UserRecipeCollection, "/users/<user:user>/recipes/")
 api.add_resource(Report, "/users/<user:user>/reports/")
+api.add_resource(ReportItem, "/users/<user:user>/reports/<int:report_job_id>/")
 api.add_resource(
     ReportDownload, "/users/<user:user>/reports/<int:report_job_id>/download/"
 )

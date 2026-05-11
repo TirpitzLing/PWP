@@ -11,12 +11,14 @@ from werkzeug.exceptions import (
     Conflict,
     Forbidden,
     NotFound,
+    ServiceUnavailable,
     UnsupportedMediaType,
 )
 
 from dbms.auth import api_key_required
 from dbms.extensions import db
 from dbms.models import ReportJob, Recipe
+from dbms.utils import publish_report_job
 
 
 class Report(Resource):
@@ -36,7 +38,7 @@ class Report(Resource):
             )
 
         try:
-            validate(request.json, NutritionReportJob.json_schema())
+            validate(request.json, ReportJob.json_schema())
         except ValidationError as exc:
             raise BadRequest(description=str(exc)) from exc
 
@@ -60,15 +62,35 @@ class Report(Resource):
         job.deserialize({"recipe_ids": recipe_ids})
         db.session.add(job)
         db.session.commit()
+        try:
+            publish_report_job(job.id, queue_name="report")
+        except RuntimeError as exc:
+            raise ServiceUnavailable(description=str(exc)) from exc
 
         return Response(
             status=202,
             headers={
                 "Location": url_for(
-                    "api.nutritionreportitem", user=user, report_job_id=job.id
+                    "api.reportitem", user=user, report_job_id=job.id
                 )
             },
         )
+
+
+class ReportItem(Resource):
+    """Resource for report job status and metadata."""
+
+    @api_key_required
+    def get(self, user, report_job_id):
+        """Return status information for a report job."""
+        job = ReportJob.query.get_or_404(report_job_id)
+
+        if request.current_user.id != user.id or job.user_id != user.id:
+            raise Forbidden(
+                description="You can only access your own report jobs."
+            )
+
+        return job.serialize()
 
 
 class ReportDownload(Resource):
