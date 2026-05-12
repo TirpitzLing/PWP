@@ -18,9 +18,10 @@ services:
     restart: always
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
+      - WORKER_API_KEY=worker-secret-key-change-me
     command: >
-      sh -c "flask --app=dbms init-db && 
-             flask --app=dbms populate-db && 
+      sh -c "flask --app=dbms init-db &&
+             flask --app=dbms populate-db &&
              gunicorn -w 4 -b 0.0.0.0:8000 'dbms:create_app()'"
     volumes:
       - .:/app
@@ -50,17 +51,16 @@ services:
       dbms-api:
         condition: service_healthy
 
-  # Background worker that consumes jobs from RabbitMQ queue report_jobs
+  # Standalone worker — communicates with the API via HTTP only.
+  # No database access, no dbms imports.
   report-worker:
-    build: .
+    build: ./report_worker
     container_name: dbms-report-worker
     restart: always
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
-    command: >
-      sh -c "python -m dbms.auxiliary_services.report_generator"
-    volumes:
-      - .:/app
+      - API_BASE_URL=http://dbms-api:8000/api
+      - WORKER_API_KEY=worker-secret-key-change-me
     depends_on:
       rabbitmq:
         condition: service_healthy

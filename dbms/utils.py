@@ -38,13 +38,25 @@ def get_pagination_args(default_limit=10, default_offset=0):
 
 def publish_report_job(
     job_id,
+    user_id,
+    recipe_ids,
     exchange_name="report_events",
     routing_key="report.job.pending",
 ):
-    """Publish a report job event to the RabbitMQ event bus."""
+    """Publish a report job event to the RabbitMQ event bus.
+
+    Includes all data the worker needs so it never has to query the database.
+    """
     rabbitmq_url = os.getenv(
         "RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F"
     )
+
+    payload = {
+        "type": routing_key,
+        "job_id": job_id,
+        "user_id": user_id,
+        "recipe_ids": recipe_ids,
+    }
 
     try:
         parameters = pika.URLParameters(rabbitmq_url)
@@ -58,10 +70,10 @@ def publish_report_job(
         channel.basic_publish(
             exchange=exchange_name,
             routing_key=routing_key,
-            body=json.dumps({"type": routing_key, "job_id": job_id}),
+            body=json.dumps(payload),
             properties=pika.BasicProperties(delivery_mode=2),
         )
-        print("[api] publishing job_id:", job_id)
+        print("[api] publishing job_id:", job_id, "payload:", payload)
         connection.close()
     except Exception as exc:
         print("[api] failed to publish job_id:", job_id)

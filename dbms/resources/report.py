@@ -63,7 +63,7 @@ class Report(Resource):
         db.session.add(job)
         db.session.commit()
         try:
-            publish_report_job(job.id)
+            publish_report_job(job.id, user.id, recipe_ids)
         except RuntimeError as exc:
             raise ServiceUnavailable(description=str(exc)) from exc
 
@@ -95,6 +95,85 @@ class ReportStatus(Resource):
             )
 
         return job.serialize()
+
+    def put(self, user, report_job_id):
+        """Called by the report worker to submit job results.
+
+        Auth: accepts either the worker API key (service-to-service) or a
+        regular user API key (with ownership check).
+        """
+        import base64
+
+        from flask import current_app
+
+        job = db.session.get(ReportJob, report_job_id)
+        if job is None:
+            raise NotFound(
+                description=f"Report job {report_job_id} not found."
+            )
+
+        # Auth: worker key bypasses user ownership check
+        worker_key = current_app.config.get("WORKER_API_KEY", "")
+        api_key = request.headers.get("dbms-api-key", "")
+
+        is_worker = bool(api_key and api_key == worker_key)
+        if not is_worker:
+            from dbms.auth import authenticate_user_by_key
+
+            current_user = authenticate_user_by_key(api_key)
+            if (
+                current_user is None
+                or current_user.id != user.id
+                or job.user_id != user.id
+            ):
+                raise Forbidden(description="Access denied.")
+
+        if not request.json:
+            raise UnsupportedMediaType(
+                description="Request payload must be JSON."
+            )
+
+        status = request.json.get("status", "done")
+        job.status = status
+        job.finished_at = datetime.now(timezone.utc)
+
+        if status == "failed":
+            job.error_message = request.json.get(
+                "error_message", "Unknown error"
+            )
+        else:
+            job.total_calories = float(
+                request.json.get("total_calories", 0.0)
+            )
+            job.total_carbs = float(
+                request.json.get("total_carbs", 0.0)
+            )
+            job.total_protein = float(
+                request.json.get("total_protein", 0.0)
+            )
+            job.total_fat = float(
+                request.json.get("total_fat", 0.0)
+            )
+            job.comparison_json = request.json.get("comparison_json", "{}")
+
+            pdf_b64 = request.json.get("pdf_base64")
+            filename = request.json.get(
+                "filename", f"report-{report_job_id}.pdf"
+            )
+
+            if pdf_b64:
+                output_dir = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "..", "..", "instance", "reports",
+                )
+                os.makedirs(output_dir, exist_ok=True)
+                output_path = os.path.join(output_dir, filename)
+                with open(output_path, "wb") as f:
+                    f.write(base64.b64decode(pdf_b64))
+                job.output_file_path = output_path
+
+        db.session.commit()
+        return Response(status=204)
 
 
 class ReportDownload(Resource):

@@ -9,6 +9,14 @@ from werkzeug.exceptions import Unauthorized
 from dbms.models import User
 
 
+def authenticate_user_by_key(api_key_raw: str):
+    """Return the User matching *api_key_raw*, or None."""
+    if not api_key_raw:
+        return None
+    hashed = User.hash_key(api_key_raw)
+    return User.query.filter_by(api_key=hashed).first()
+
+
 def api_key_required(f):
     # The decorator is based on
     # the 'require_admin' and 'require_sensor_key' decorators from lovelace
