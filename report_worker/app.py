@@ -11,6 +11,7 @@ import threading
 import pika
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from flask_swagger_ui import get_swaggerui_blueprint
 
 from storage import create_job, get_job
 from worker import connect_and_consume
@@ -104,6 +105,18 @@ def create_app():
             download_name=os.path.basename(path),
             mimetype="application/pdf",
         )
+
+    # ---------------------------------------------------------------
+    # Swagger UI at /docs/
+    # ---------------------------------------------------------------
+    swagger_url = "/docs"
+    api_url = "/static/schema/swagger.yaml"
+    swagger_blueprint = get_swaggerui_blueprint(
+        swagger_url,
+        api_url,
+        config={"app_name": "DBMS Report Service"},
+    )
+    app.register_blueprint(swagger_blueprint, url_prefix=swagger_url)
 
     # ---------------------------------------------------------------
     # Start the RabbitMQ consumer in a background thread
