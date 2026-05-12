@@ -25,6 +25,25 @@ class Report(Resource):
     """Resource for creating nutrition report jobs."""
 
     @api_key_required
+    def get(self, user):
+        """List report jobs for the authenticated user."""
+        if request.current_user.id != user.id:
+            raise Forbidden(
+                description="You can only view reports for your own account."
+            )
+
+        query = ReportJob.query.filter_by(user_id=user.id)
+        status = request.args.get("status")
+        if status:
+            query = query.filter_by(status=status)
+
+        jobs = query.order_by(ReportJob.created_at.desc()).all()
+        return {
+            "items": [job.serialize() for job in jobs],
+            "count": len(jobs),
+        }
+
+    @api_key_required
     def post(self, user):
         """Create a report job for selected recipe ids."""
         if request.current_user.id != user.id:
@@ -63,7 +82,7 @@ class Report(Resource):
         db.session.add(job)
         db.session.commit()
         try:
-            publish_report_job(job.id, queue_name="report")
+            publish_report_job(job.id)
         except RuntimeError as exc:
             raise ServiceUnavailable(description=str(exc)) from exc
 
@@ -71,13 +90,13 @@ class Report(Resource):
             status=202,
             headers={
                 "Location": url_for(
-                    "api.reportitem", user=user, report_job_id=job.id
+                    "api.reportstatus", user=user, report_job_id=job.id
                 )
             },
         )
 
 
-class ReportItem(Resource):
+class ReportStatus(Resource):
     """Resource for report job status and metadata."""
 
     @api_key_required

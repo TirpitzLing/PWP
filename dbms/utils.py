@@ -36,8 +36,12 @@ def get_pagination_args(default_limit=10, default_offset=0):
     return limit, offset
 
 
-def publish_report_job(job_id, queue_name="report_jobs"):
-    """Publish a report job id to a RabbitMQ queue."""
+def publish_report_job(
+    job_id,
+    exchange_name="report_events",
+    routing_key="report.job.pending",
+):
+    """Publish a report job event to the RabbitMQ event bus."""
     rabbitmq_url = os.getenv(
         "RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F"
     )
@@ -46,15 +50,19 @@ def publish_report_job(job_id, queue_name="report_jobs"):
         parameters = pika.URLParameters(rabbitmq_url)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
-        channel.queue_declare(queue=queue_name, durable=True)
+        channel.exchange_declare(
+            exchange=exchange_name,
+            exchange_type="topic",
+            durable=True,
+        )
         channel.basic_publish(
-            exchange="",
-            routing_key=queue_name,
-            body=json.dumps({"job_id": job_id}),
+            exchange=exchange_name,
+            routing_key=routing_key,
+            body=json.dumps({"type": routing_key, "job_id": job_id}),
             properties=pika.BasicProperties(delivery_mode=2),
         )
         connection.close()
     except Exception as exc:
         raise RuntimeError(
-            f"Failed to publish report job to queue '{queue_name}': {exc}"
+            f"Failed to publish report job event '{routing_key}': {exc}"
         ) from exc
