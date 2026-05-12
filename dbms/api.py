@@ -19,6 +19,7 @@ from dbms.resources.recipe_ingredient import (
 )
 from dbms.resources.save import SaveCollection, SaveItem
 from dbms.resources.token import Token
+from dbms.resources.proxy import ImageProxy
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 CORS(api_bp, expose_headers=["Location"])
@@ -53,6 +54,8 @@ api.add_resource(SaveCollection, "/users/<user:user>/saves/")
 api.add_resource(SaveItem, "/users/<user:user>/saves/<recipe:recipe>/")
 
 api.add_resource(Token, "/tokens/")
+
+api.add_resource(ImageProxy, "/proxy/image/")
 
 api.add_resource(IngredientCollection, "/ingredients/")
 api.add_resource(IngredientItem, "/ingredients/<ingredient:ingredient>/")
