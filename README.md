@@ -277,10 +277,73 @@ More information about testing, please refer to this document: [Readme before te
 
 # 5. Live Demo
 
-- Docs: https://edvic.ddns.net/api/docs/
-- Base Path: https://edvic.ddns.net
+- Docs: https://dbms.ddns.net:10013/api/docs/
+- Base Path: https://dbms.ddns.net:10013/api/
 
-# 6. Deployment Configuration Tests
+# 6. Client Configuration (env.json)
+
+The Flutter client application loads its API connection settings from an `env.json` file.
+
+### File Location
+
+Place `env.json` at the **root of the Flutter project**:
+
+```
+daily_bowl/
+├── env.json          ← here
+├── lib/
+├── pubspec.yaml
+└── ...
+```
+
+The file is registered as a Flutter asset in `pubspec.yaml` (line 38):
+
+```yaml
+flutter:
+  assets:
+    - env.json
+```
+
+### File Structure
+
+```json
+{
+    "SUPABASE_URL": "https://dummy.supabase.co",
+    "SUPABASE_ANON_KEY": "dummykey.updateyourkkey.here",
+    "DBMS_BASE_URL": "https://dbms.ddns.net:10013/api",
+    "DBMS_API_KEY": "admin-secret-key"
+}
+```
+
+### Field Descriptions
+
+| Field | Required | Description |
+|---|---|---|
+| `DBMS_BASE_URL` | **Yes** | Base URL of the DBMS API, including the `/api` prefix. Format: `https://<host>:<port>/api`. Change this to match your deployment address. |
+| `DBMS_API_KEY` | **Yes** | Default API key used as a fallback when no user-specific key is stored. After running `flask populate-db`, copy the admin key printed in the terminal here. |
+| `SUPABASE_URL` | No | Placeholder — not used by DBMS. Retained for template compatibility. |
+| `SUPABASE_ANON_KEY` | No | Placeholder — not used by DBMS. Retained for template compatibility. |
+
+### Configuration Examples
+
+**Local development (Flask dev server):**
+```json
+"DBMS_BASE_URL": "http://localhost:5000/api"
+```
+
+**Production with Docker on a cloud server:**
+```json
+"DBMS_BASE_URL": "https://dbms.ddns.net:10013/api"
+```
+
+**Testing on the same machine with Docker:**
+```json
+"DBMS_BASE_URL": "https://localhost:10013/api"
+```
+
+> After changing `env.json`, rebuild the Flutter app with `flutter clean && flutter pub get && flutter run`.
+
+# 7. Deployment Configuration Tests
 
 To verify that the production environment is properly configured, isolated, and functional, please run the following tests sequentially. **Ensure you are in the project root directory before running any commands.**
 
