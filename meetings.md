@@ -82,9 +82,9 @@ Lastly, the Spoonacular API presented in the deliverable 0 was discussed and sev
 
 ## Midterm meeting
 
-- **DATE:**
-- **PARTICIPANTS:**
-- **TEACHER:**
+- **DATE:** 2026/04/13
+- **PARTICIPANTS:** Anqi Zhou, Junxuan Ling, Tianyi Liu
+- **TEACHER:** Ivan Sanchez
 
 ### Action points
 
@@ -111,9 +111,9 @@ Lastly, the Spoonacular API presented in the deliverable 0 was discussed and sev
 
 ## Final meeting
 
-- **DATE:**
-- **PARTICIPANTS:**
-- **TEACHER:**
+- **DATE:** 2026/05/13
+- **PARTICIPANTS:** Anqi Zhou, Junxuan Ling, Tianyi Liu
+- **TEACHER:** Ivan Sanchez
 
 ### Action points
 
