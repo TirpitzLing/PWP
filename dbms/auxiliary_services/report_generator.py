@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import time
 import pika
+from flask import current_app
 
 from dbms import create_app
 from dbms.extensions import db
@@ -92,30 +93,29 @@ def _build_pdf_bytes(lines: list[str]) -> bytes:
 # ---------------------------
 
 
-def _calculate_recipe_totals(recipe: Recipe) -> dict[str, float]:
+def _fetch_recipe_nutrition(client, recipe_id: int) -> dict[str, float]:
+    resp = client.get(f"/api/recipes/{recipe_id}/nutrition/")
+
+    if resp.status_code != 200:
+        raise RuntimeError(
+            f"Failed to fetch nutrition for recipe {recipe_id}: "
+            f"HTTP {resp.status_code}"
+        )
+
+    payload = resp.get_json(silent=True) or {}
+    return {
+        "calories": round(float(payload.get("total_calories") or 0.0), 2),
+        "carbs": round(float(payload.get("total_carbs") or 0.0), 2),
+        "protein": round(float(payload.get("total_protein") or 0.0), 2),
+        "fat": round(float(payload.get("total_fat") or 0.0), 2),
+    }
+
+
+def calculate_totals(recipe_ids: list[int], client) -> dict[str, float]:
     totals = {"calories": 0.0, "carbs": 0.0, "protein": 0.0, "fat": 0.0}
 
-    for assoc in recipe.ingredients:
-        ing = assoc.ingredient
-        ratio = (assoc.amount or 0.0) / 100.0
-
-        if ing.calories:
-            totals["calories"] += ing.calories * ratio
-        if ing.carbs:
-            totals["carbs"] += ing.carbs * ratio
-        if ing.protein:
-            totals["protein"] += ing.protein * ratio
-        if ing.fat:
-            totals["fat"] += ing.fat * ratio
-
-    return {k: round(v, 2) for k, v in totals.items()}
-
-
-def calculate_totals(recipes: list[Recipe]) -> dict[str, float]:
-    totals = {"calories": 0.0, "carbs": 0.0, "protein": 0.0, "fat": 0.0}
-
-    for r in recipes:
-        rt = _calculate_recipe_totals(r)
+    for recipe_id in recipe_ids:
+        rt = _fetch_recipe_nutrition(client, recipe_id)
         for k in totals:
             totals[k] += rt[k]
 
@@ -157,7 +157,8 @@ def process_job(job: ReportJob, instance_path: str):
 
         output_path = Path(instance_path) / "reports" / f"report-{job.id}.pdf"
 
-        totals = calculate_totals(ordered)
+        with current_app.test_client() as client:
+            totals = calculate_totals([r.id for r in ordered], client)
         comparison = compare_to_standard(totals)
 
         lines = [
