@@ -143,15 +143,46 @@ def compare_to_standard(
 
 
 def build_recommendation(comparison: dict[str, dict[str, float]]) -> str:
-    calories = comparison["calories"]
-    diff = calories["difference"]
-    pct = calories["percent"]
+    low_items = []
+    high_items = []
 
-    if 90 <= pct <= 110:
-        return "Good condition: intake is close to the target range."
-    if diff > 0:
-        return "Intake is high: consider adding exercise to deplete excess calories."
-    return "Intake is low: consider taking a bit more nutrition."
+    nutrient_suggestions = {
+        "calories": "more energy-dense foods such as rice, bread, oats, nuts, or avocado",
+        "carbs": "carb sources such as rice, potatoes, oats, fruit, or whole grains",
+        "protein": "protein-rich foods such as eggs, tofu, chicken, fish, beans, or yogurt",
+        "fat": "healthy fats such as olive oil, nuts, seeds, avocado, or fatty fish",
+    }
+
+    for nutrient, data in comparison.items():
+        pct = data["percent"]
+        if pct < 90:
+            low_items.append(nutrient)
+        elif pct > 110:
+            high_items.append(nutrient)
+
+    if not low_items and not high_items:
+        return "Good condition: the intake is close to the target range."
+
+    parts = []
+
+    if low_items:
+        suggestions = [nutrient_suggestions[item] for item in low_items]
+        parts.append(
+            "Low in "
+            + ", ".join(low_items)
+            + ". Consider adding "
+            + "; ".join(suggestions)
+            + "."
+        )
+
+    if high_items:
+        parts.append(
+            "High in "
+            + ", ".join(high_items)
+            + ". Consider reducing portion size or adding exercise."
+        )
+
+    return " ".join(parts)
 
 
 # ---------------------------
