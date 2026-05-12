@@ -15,10 +15,10 @@ from dbms.extensions import db
 from dbms.models import ReportJob, Recipe
 
 STANDARD_INTAKE = {
-    "calories": 700.0,
-    "carbs": 80.0,
-    "protein": 45.0,
-    "fat": 25.0,
+    "calories": 350.0,
+    "carbs": 30.0,
+    "protein": 20.0,
+    "fat": 12.0,
 }
 
 EVENT_BUS_EXCHANGE = "report_events"
@@ -122,19 +122,36 @@ def calculate_totals(recipe_ids: list[int], client) -> dict[str, float]:
     return {k: round(v, 2) for k, v in totals.items()}
 
 
-def compare_to_standard(totals: dict[str, float]) -> dict:
+def compare_to_standard(
+    totals: dict[str, float], recipe_count: int
+) -> dict[str, dict[str, float]]:
     result = {}
+
+    multiplier = max(recipe_count, 1)
 
     for k, std in STANDARD_INTAKE.items():
         val = totals.get(k, 0.0)
+        scaled_std = round(std * multiplier, 2)
         result[k] = {
             "total": val,
-            "standard": std,
-            "difference": round(val - std, 2),
-            "percent": round((val / std) * 100, 2) if std else 0,
+            "standard": scaled_std,
+            "difference": round(val - scaled_std, 2),
+            "percent": round((val / scaled_std) * 100, 2) if scaled_std else 0,
         }
 
     return result
+
+
+def build_recommendation(comparison: dict[str, dict[str, float]]) -> str:
+    calories = comparison["calories"]
+    diff = calories["difference"]
+    pct = calories["percent"]
+
+    if 90 <= pct <= 110:
+        return "Good condition: intake is close to the target range."
+    if diff > 0:
+        return "Intake is high: consider adding exercise to deplete excess calories."
+    return "Intake is low: consider taking a bit more nutrition."
 
 
 # ---------------------------
@@ -159,12 +176,12 @@ def process_job(job: ReportJob, instance_path: str):
 
         with current_app.test_client() as client:
             totals = calculate_totals([r.id for r in ordered], client)
-        comparison = compare_to_standard(totals)
+        comparison = compare_to_standard(totals, len(ordered))
+        recommendation = build_recommendation(comparison)
 
         lines = [
             "Nutrition Report",
-            f"Job: {job.id}",
-            f"User: {job.user_id}",
+            f"User: {job.user.username if job.user else job.user_id}",
             "",
         ]
 
@@ -177,6 +194,34 @@ def process_job(job: ReportJob, instance_path: str):
             f"Carbs: {totals['carbs']}",
             f"Protein: {totals['protein']}",
             f"Fat: {totals['fat']}",
+            "",
+            f"Comparison Summary:",
+            (
+                "Calories -> total "
+                f"{comparison['calories']['total']}, standard "
+                f"{comparison['calories']['standard']}, diff: "
+                f"{comparison['calories']['difference']}"
+            ),
+            (
+                "Carbs -> total "
+                f"{comparison['carbs']['total']}, standard "
+                f"{comparison['carbs']['standard']}, diff: "
+                f"{comparison['carbs']['difference']}"
+            ),
+            (
+                "Protein -> total "
+                f"{comparison['protein']['total']}, standard "
+                f"{comparison['protein']['standard']}, diff "
+                f"{comparison['protein']['difference']}"
+            ),
+            (
+                "Fat -> total "
+                f"{comparison['fat']['total']}, standard "
+                f"{comparison['fat']['standard']}, diff: "
+                f"{comparison['fat']['difference']}"
+            ),
+            "",
+            f"Suggestion: {recommendation}",
         ]
 
         pdf = _build_pdf_bytes(lines)
