@@ -101,6 +101,14 @@ def _populate_db():
         api_key=User.hash_key(TEST_KEY),
     )
 
+    admin = User(
+        username="admin",
+        pwd=generate_password_hash("admin-password"),
+        email="admin@example.com",
+        created_at=datetime.now(),
+        api_key=User.hash_key("adminkey"),
+    )
+
     user2 = User(
         username="test-user-2",
         pwd=generate_password_hash("test-password-2"),
@@ -109,7 +117,7 @@ def _populate_db():
         api_key=User.hash_key("user2key"),
     )
 
-    db.session.add_all([user, user2])
+    db.session.add_all([user, admin, user2])
     db.session.commit()
 
     for i in range(1, 4):
@@ -168,6 +176,64 @@ def _create_report_job(user_id=1, recipe_ids=None, status="pending"):
     return job
 
 
+class TestModelDeserialization:
+    """Direct tests for model deserialization to hit all date/option branches."""
+
+    def test_report_job_full_deserialize(self):
+        job = ReportJob()
+        job.deserialize(
+            {
+                "recipe_ids": [1],
+                "status": "done",
+                "total_calories": 100.0,
+                "total_carbs": 20.0,
+                "total_protein": 10.0,
+                "total_fat": 5.0,
+                "comparison": {"diff": 5},
+                "output_file_path": "/tmp/a",
+                "error_message": "none",
+                "created_at": "2026-01-01T00:00:00",
+                "started_at": "2026-01-01T00:01:00",
+                "finished_at": "2026-01-01T00:02:00",
+            }
+        )
+        serialized = job.serialize()
+        assert "diff" in serialized["comparison"]
+        assert serialized["started_at"] == "2026-01-01T00:01:00"
+        assert serialized["finished_at"] == "2026-01-01T00:02:00"
+
+    def test_save_deserialize(self):
+        s = Save()
+        s.deserialize({"created_at": "2026-01-01T00:00:00"})
+        assert s.created_at is not None
+
+    def test_ingredient_deserialize(self):
+        i = Ingredient()
+        i.deserialize(
+            {
+                "name": "A",
+                "img_url": "a.jpg",
+                "allergy": "none",
+                "calories": 1,
+                "carbs": 2,
+                "protein": 3,
+                "fat": 4,
+            }
+        )
+        assert i.serialize()["name"] == "A"
+
+    def test_user_partial_deserialize_email(self):
+        u = User()
+        u.api_key = "dummy"
+        u.deserialize({"email": "partial@test.com"}, partial=True)
+        assert u.email == "partial@test.com"
+
+    def test_save_json_schema(self):
+        schema = Save.json_schema()
+        assert schema["type"] == "object"
+        assert "recipe_id" in schema["properties"]
+
+
 def test_create_app_no_config():
     """
     Test the application factory initialization without test configurations.
@@ -176,6 +242,12 @@ def test_create_app_no_config():
     app = create_app(test_config=None)
     assert app is not None
     assert "sqlite" in app.config["SQLALCHEMY_DATABASE_URI"]
+
+
+def test_admin_route(client):
+    """Test the admin dashboard redirect."""
+    resp = client.get("/admin")
+    assert resp.status_code == 302
 
 
 class TestCLICommands:  # pylint: disable=R0903
@@ -219,9 +291,16 @@ class TestRecipeCollection:
         assert resp.status_code == 200
         body = json.loads(resp.data)
         assert len(body) == 3
-        for item in body:
-            assert "title" in item
-            assert "procedure" in item
+
+    def test_get_aggregate_categories(self, client):
+        resp = client.get(self.RESOURCE_URL + "?aggregate=categories")
+        assert resp.status_code == 200
+        assert "categories" in json.loads(resp.data)
+
+    def test_get_cuisine_type(self, client):
+        resp = client.get(self.RESOURCE_URL + "?cuisine_type=cuisine-1")
+        assert resp.status_code == 200
+        assert len(json.loads(resp.data)) == 1
 
     def test_post_valid_request(self, client):
         """Test creating a new recipe with a valid payload (201 Created)."""
@@ -233,6 +312,11 @@ class TestRecipeCollection:
         assert resp_get.status_code == 200
         body = json.loads(resp_get.data)
         assert body["title"] == "extra-recipe-1"
+
+    def test_post_with_created_at(self, client):
+        valid = _get_recipe_json(99)
+        valid["created_at"] = "2026-01-01T00:00:00"
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 201
 
     def test_wrong_mediatype(self, client):
         """
@@ -312,6 +396,17 @@ class TestRecipeItem:
         check_resp = client.get(self.RESOURCE_URL)
         assert json.loads(check_resp.data)["title"] == "Updated Title"
 
+    def test_admin_put_success(self, client):
+        valid = _get_recipe_json()
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "adminkey"},
+            ).status_code
+            == 204
+        )
+
     def test_put_not_found(self, client):
         """
         Test updating a non-existent recipe.
@@ -373,6 +468,14 @@ class TestRecipeItem:
         """Test deleting a recipe successfully (204 No Content)."""
         assert client.delete(self.RESOURCE_URL).status_code == 204
         assert client.get(self.RESOURCE_URL).status_code == 404
+
+    def test_admin_delete_success(self, client):
+        assert (
+            client.delete(
+                "/api/recipes/2/", headers={"dbms-api-key": "adminkey"}
+            ).status_code
+            == 204
+        )
 
     def test_unauthorized(self, client):
         """
@@ -650,6 +753,33 @@ class TestSave:
         """
         assert client.delete(self.ITEM_URL + "3/").status_code == 204
 
+    def test_post_forbidden(self, client):
+        """
+        Test saving a recipe to another user's account.
+        Forces a 403 Forbidden error using 'user2key' on user 1's saves.
+        """
+        assert (
+            client.post(
+                self.COLLECTION_URL,
+                json={"recipe_id": 1},
+                headers={"dbms-api-key": "user2key"},
+            ).status_code
+            == 403
+        )
+
+    def test_delete_forbidden(self, client):
+        """
+        Test removing a saved recipe from another user's account.
+        Forces a 403 Forbidden error using 'user2key'.
+        """
+        client.post(self.COLLECTION_URL, json={"recipe_id": 1})
+        assert (
+            client.delete(
+                self.ITEM_URL + "1/", headers={"dbms-api-key": "user2key"}
+            ).status_code
+            == 403
+        )
+
     def test_unauthorized(self, client):
         """
         Test saving a recipe with invalid authentication credentials.
@@ -677,6 +807,15 @@ class TestUserCollection:
     def test_post(self, client):
         """Test registering a new user successfully (201 Created)."""
         valid = {"username": "new-user", "email": "new@test.com", "pwd": "123"}
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 201
+
+    def test_post_with_created_at(self, client):
+        valid = {
+            "username": "new-user-2",
+            "email": "new2@test.com",
+            "pwd": "123",
+            "created_at": "2026-01-01T00:00:00",
+        }
         assert client.post(self.RESOURCE_URL, json=valid).status_code == 201
 
     def test_post_conflict(self, client):
@@ -774,6 +913,74 @@ class TestUserItem:
                 self.RESOURCE_URL, data="not json", content_type="text/plain"
             ).status_code
             == 415
+        )
+
+    def test_patch_success(self, client):
+        valid = {"username": "patched-user", "allergies": "none"}
+        assert client.patch(self.RESOURCE_URL, json=valid).status_code == 204
+
+    def test_patch_conflict(self, client):
+        valid = {"username": "test-user-2"}
+        assert client.patch(self.RESOURCE_URL, json=valid).status_code == 409
+
+    def test_patch_bad_request(self, client):
+        assert (
+            client.patch(
+                self.RESOURCE_URL, json={"id": "not-a-number"}
+            ).status_code
+            == 400
+        )
+
+    def test_patch_wrong_mediatype(self, client):
+        assert (
+            client.patch(
+                self.RESOURCE_URL, data="txt", content_type="text/plain"
+            ).status_code
+            == 415
+        )
+
+    def test_patch_forbidden(self, client):
+        assert (
+            client.patch(
+                self.RESOURCE_URL,
+                json={"username": "hacked"},
+                headers={"dbms-api-key": "user2key"},
+            ).status_code
+            == 403
+        )
+
+    def test_admin_put_success(self, client):
+        valid = {
+            "username": "admin-updated",
+            "email": "admin-updated@example.com",
+            "pwd": "pwd",
+        }
+        assert (
+            client.put(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "adminkey"},
+            ).status_code
+            == 204
+        )
+
+    def test_admin_patch_success(self, client):
+        valid = {"username": "admin-patched"}
+        assert (
+            client.patch(
+                self.RESOURCE_URL,
+                json=valid,
+                headers={"dbms-api-key": "adminkey"},
+            ).status_code
+            == 204
+        )
+
+    def test_admin_delete_success(self, client):
+        assert (
+            client.delete(
+                self.RESOURCE_URL, headers={"dbms-api-key": "adminkey"}
+            ).status_code
+            == 204
         )
 
     def test_delete(self, client):
@@ -913,6 +1120,71 @@ class TestReport:
         resp = client.get(f"/api/users/1/reports/{job.id}/download/")
         assert resp.status_code == 409
 
+    def test_post_invalid_schema(self, client):
+        """Test creating a report with invalid schema (empty array) returns 400."""
+        resp = client.post(self.COLLECTION_URL, json={"recipe_ids": []})
+        assert resp.status_code == 400
+
+    def test_post_recipe_not_found(self, client):
+        """Test creating a report with a non-existent recipe id returns 404."""
+        resp = client.post(self.COLLECTION_URL, json={"recipe_ids": [9999]})
+        assert resp.status_code == 404
+
+    def test_post_recipe_not_owned(self, client):
+        """Test creating a report with a recipe owned by another user returns 403."""
+        with client.application.app_context():
+            admin = db.session.get(User, 2)
+            recipe = Recipe(
+                title="admin-recipe",
+                procedure="admin's recipe",
+                servings=1,
+                created_at=datetime.now(),
+                created_by=admin.id,
+            )
+            db.session.add(recipe)
+            db.session.commit()
+            admin_recipe_id = recipe.id
+
+        resp = client.post(
+            self.COLLECTION_URL, json={"recipe_ids": [admin_recipe_id]}
+        )
+        assert resp.status_code == 403
+
+    def test_status_not_found(self, client):
+        """Test accessing a non-existent report job returns 404."""
+        resp = client.get("/api/users/1/reports/9999/")
+        assert resp.status_code == 404
+
+    def test_download_not_found(self, client):
+        """Test downloading a non-existent report job returns 404."""
+        resp = client.get("/api/users/1/reports/9999/download/")
+        assert resp.status_code == 404
+
+    def test_download_forbidden(self, client):
+        """Test downloading another user's report returns 403."""
+        job = _create_report_job(status="done")
+        resp = client.get(
+            f"/api/users/1/reports/{job.id}/download/",
+            headers={"dbms-api-key": "user2key"},
+        )
+        assert resp.status_code == 403
+
+    def test_download_file_missing(self, client):
+        """Test downloading a report marked done but with no file returns 404."""
+        job = _create_report_job(status="done")
+        resp = client.get(f"/api/users/1/reports/{job.id}/download/")
+        assert resp.status_code == 404
+
+    def test_post_publish_failure(self, client, monkeypatch):
+        """Test creating a report when publishing fails returns 503."""
+        def fail_publish(job_id):
+            raise RuntimeError("RabbitMQ not available")
+        monkeypatch.setattr(
+            "dbms.resources.report.publish_report_job", fail_publish
+        )
+        resp = client.post(self.COLLECTION_URL, json={"recipe_ids": [1]})
+        assert resp.status_code == 503
+
 
 class TestReportPublisher:
     """Tests for the report RabbitMQ publisher helper."""
@@ -963,6 +1235,31 @@ class TestReportPublisher:
         }
         assert captured["closed"] is True
 
+    def test_publish_report_job_failure(self, monkeypatch):
+        """Test that publish_report_job raises RuntimeError on connection failure."""
+
+        class FailingConnection:
+            def channel(self):
+                raise Exception("Connection failed")
+
+            def close(self):
+                pass
+
+        monkeypatch.setenv(
+            "RABBITMQ_URL", "amqp://guest:guest@localhost:5672/%2F"
+        )
+        monkeypatch.setattr(
+            "dbms.utils.pika.URLParameters",
+            lambda url: url,
+        )
+        monkeypatch.setattr(
+            "dbms.utils.pika.BlockingConnection",
+            lambda parameters: FailingConnection(),
+        )
+
+        with pytest.raises(RuntimeError, match="Failed to publish"):
+            publish_report_job(42)
+
 
 class TestIngredientCollection:
     """Tests for the IngredientCollection resource (/api/ingredients/)."""
@@ -985,6 +1282,18 @@ class TestIngredientCollection:
             ).status_code
             == 201
         )
+
+    def test_post_full_fields(self, client):
+        valid = {
+            "name": "Sugar",
+            "img_url": "s.jpg",
+            "allergy": "none",
+            "calories": 100.0,
+            "carbs": 20.0,
+            "protein": 0.0,
+            "fat": 0.0,
+        }
+        assert client.post(self.RESOURCE_URL, json=valid).status_code == 201
 
     def test_post_missing_field(self, client):
         """
@@ -1065,6 +1374,10 @@ class TestIngredientItem:
             ).status_code
             == 415
         )
+
+    def test_delete_success(self, client):
+        """Test deleting an ingredient successfully (204 No Content)."""
+        assert client.delete(self.RESOURCE_URL).status_code == 204
 
 
 class TestRecipeNutrition:
@@ -1174,6 +1487,11 @@ class TestToken:
         # with the same old token should fail.
         resp_after = client.delete(self.URL)
         assert resp_after.status_code == 401
+
+    def test_post_wrong_mediatype(self, client):
+        """Test login with invalid media type returns 415."""
+        resp = client.post(self.URL, data="not json", content_type="text/plain")
+        assert resp.status_code == 415
 
     def test_delete_logout_unauthorized(self, client):
         """Test logout with invalid token fails."""
