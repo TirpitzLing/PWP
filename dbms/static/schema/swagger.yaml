@@ -351,6 +351,79 @@ components:
                 recipe_id: 88
                 created_at: "2026-03-31T18:30:00Z"
 
+        ReportJob:
+            type: object
+            properties:
+                id:
+                    type: integer
+                user_id:
+                    type: integer
+                recipe_ids:
+                    type: array
+                    items:
+                        type: integer
+                status:
+                    type: string
+                total_calories:
+                    type: number
+                    nullable: true
+                total_carbs:
+                    type: number
+                    nullable: true
+                total_protein:
+                    type: number
+                    nullable: true
+                total_fat:
+                    type: number
+                    nullable: true
+                comparison:
+                    type: object
+                    nullable: true
+                output_file_path:
+                    type: string
+                    nullable: true
+                error_message:
+                    type: string
+                    nullable: true
+                created_at:
+                    type: string
+                    format: date-time
+                started_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                finished_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+            example:
+                id: 17
+                user_id: 3
+                recipe_ids: [4, 8]
+                status: "pending"
+                total_calories: 0.0
+                total_carbs: 0.0
+                total_protein: 0.0
+                total_fat: 0.0
+                comparison: null
+                output_file_path: null
+                error_message: null
+                created_at: "2026-05-12T07:30:00Z"
+                started_at: null
+                finished_at: null
+
+        ReportJobCreate:
+            type: object
+            required: [recipe_ids]
+            properties:
+                recipe_ids:
+                    type: array
+                    items:
+                        type: integer
+                    minItems: 1
+            example:
+                recipe_ids: [4, 8]
+
         SaveCreate:
             type: object
             required: [recipe_id]
@@ -405,6 +478,12 @@ components:
                 type: integer
         IngredientPathParam:
             name: ingredient
+            in: path
+            required: true
+            schema:
+                type: integer
+        ReportJobPathParam:
+            name: report_job_id
             in: path
             required: true
             schema:
@@ -737,6 +816,195 @@ paths:
                                 code: 404
                                 description: "User with id 42 not found."
                                 name: "Not Found"
+
+    /users/{user}/reports/:
+        post:
+            tags: [Reports]
+            summary: Create a nutrition report job
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserPathParam"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ReportJobCreate"
+            responses:
+                "202":
+                    description: Report job accepted
+                    headers:
+                        Location:
+                            description: URI of the created report status resource
+                            schema:
+                                type: string
+                                example: /api/users/3/reports/17/
+                "400":
+                    description: Bad Request
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 400
+                                description: "JSON Schema validation failed."
+                                name: "Bad Request"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                description: "You can only create reports for your own account."
+                                name: "Forbidden"
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 404
+                                description: "User or recipe not found."
+                                name: "Not Found"
+                "415":
+                    description: Unsupported Media Type
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 415
+                                description: "Request payload must be JSON."
+                                name: "Unsupported Media Type"
+                "503":
+                    description: Service Unavailable
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 503
+                                description: "Failed to publish report job event."
+                                name: "Service Unavailable"
+
+    /users/{user}/reports/{report_job_id}/:
+        get:
+            tags: [Reports]
+            summary: Get report job status
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserPathParam"
+                - $ref: "#/components/parameters/ReportJobPathParam"
+            responses:
+                "200":
+                    description: A report job
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ReportJob"
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                description: "You can only access your own report jobs."
+                                name: "Forbidden"
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 404
+                                description: "Report job not found."
+                                name: "Not Found"
+
+    /users/{user}/reports/{report_job_id}/download/:
+        get:
+            tags: [Reports]
+            summary: Download a completed nutrition report
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - $ref: "#/components/parameters/UserPathParam"
+                - $ref: "#/components/parameters/ReportJobPathParam"
+            responses:
+                "200":
+                    description: The generated report PDF
+                    content:
+                        application/pdf:
+                            schema:
+                                type: string
+                                format: binary
+                "401":
+                    description: Unauthorized
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                description: "Invalid API key."
+                                name: "Unauthorized"
+                "403":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                description: "You can only access your own report jobs."
+                                name: "Forbidden"
+                "404":
+                    description: Not Found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 404
+                                description: "Report job or file not found."
+                                name: "Not Found"
+                "409":
+                    description: Conflict
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 409
+                                description: "Report is not ready yet."
+                                name: "Conflict"
 
     # ---------------- SAVES ----------------
     /users/{user}/saves/:

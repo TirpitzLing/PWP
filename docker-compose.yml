@@ -31,7 +31,8 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
 
   
   # Reverse Proxy & Security
@@ -46,7 +47,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/certs:/etc/nginx/certs:ro 
     depends_on:
-      - dbms-api
+      dbms-api:
+        condition: service_healthy
 
   # Background worker that consumes jobs from RabbitMQ queue report_jobs
   report-worker:
@@ -63,4 +65,4 @@ services:
       rabbitmq:
         condition: service_healthy
       dbms-api:
-        condition: service_started
+        condition: service_healthy

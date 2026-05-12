@@ -22,7 +22,15 @@ from werkzeug.security import generate_password_hash
 from dbms import create_app
 from dbms.converters import SaveConverter
 from dbms.extensions import db
-from dbms.models import Recipe, Ingredient, RecipeIngredient, User, Save
+from dbms.models import (
+    Recipe,
+    Ingredient,
+    RecipeIngredient,
+    User,
+    Save,
+    ReportJob,
+)
+from dbms.utils import publish_report_job
 
 # ignore ResourceWarnings caused by in-memory SQLite fast connections
 warnings.filterwarnings("ignore", category=ResourceWarning)
@@ -143,6 +151,21 @@ def _get_recipe_json(number=1):
         "procedure": "Extra instructions",
         "created_by": 1,
     }
+
+
+def _create_report_job(user_id=1, recipe_ids=None, status="pending"):
+    """Create and persist a report job for tests."""
+    if recipe_ids is None:
+        recipe_ids = [1, 2]
+
+    job = ReportJob(
+        user_id=user_id,
+        created_at=datetime.now(),
+    )
+    job.deserialize({"recipe_ids": recipe_ids, "status": status})
+    db.session.add(job)
+    db.session.commit()
+    return job
 
 
 def test_create_app_no_config():
@@ -824,6 +847,123 @@ class TestUserRecipeCollection:
         assert client.get("/api/users/999/recipes/").status_code == 404
 
 
+class TestReport:
+    """Tests for the report job resources (/api/users/{id}/reports/)."""
+
+    COLLECTION_URL = "/api/users/1/reports/"
+
+    def test_post_creates_job(self, client, monkeypatch):
+        """Test creating a report job returns 202 and a status Location."""
+        monkeypatch.setattr(
+            "dbms.resources.report.publish_report_job",
+            lambda job_id: None,
+        )
+
+        resp = client.post(self.COLLECTION_URL, json={"recipe_ids": [1, 2]})
+        assert resp.status_code == 202
+        assert resp.headers["Location"] == "/api/users/1/reports/1/"
+
+        status_resp = client.get(resp.headers["Location"])
+        assert status_resp.status_code == 200
+        body = json.loads(status_resp.data)
+        assert body["status"] == "pending"
+        assert body["recipe_ids"] == [1, 2]
+        assert body["user_id"] == 1
+
+    def test_post_forbidden(self, client):
+        """Test creating a report for another user returns 403."""
+        resp = client.post(
+            self.COLLECTION_URL,
+            json={"recipe_ids": [1]},
+            headers={"dbms-api-key": "user2key"},
+        )
+        assert resp.status_code == 403
+
+    def test_post_missing_field(self, client):
+        """Test creating a report without recipe ids returns 400."""
+        resp = client.post(self.COLLECTION_URL, json={})
+        assert resp.status_code == 415
+
+    def test_status_forbidden(self, client):
+        """Test accessing another user's report status returns 403."""
+        job = _create_report_job()
+        resp = client.get(
+            f"/api/users/1/reports/{job.id}/",
+            headers={"dbms-api-key": "user2key"},
+        )
+        assert resp.status_code == 403
+
+    def test_download_success(self, client, tmp_path):
+        """Test downloading a finished report returns the PDF file."""
+        pdf_path = tmp_path / "report.pdf"
+        pdf_path.write_bytes(b"%PDF-1.4\n%test report\n%%EOF")
+
+        job = _create_report_job(status="done")
+        with client.application.app_context():
+            job.output_file_path = str(pdf_path)
+            db.session.commit()
+
+        resp = client.get(f"/api/users/1/reports/{job.id}/download/")
+        assert resp.status_code == 200
+        assert "attachment" in resp.headers["Content-Disposition"]
+
+    def test_download_not_ready(self, client):
+        """Test downloading a pending report returns 409."""
+        job = _create_report_job()
+        resp = client.get(f"/api/users/1/reports/{job.id}/download/")
+        assert resp.status_code == 409
+
+
+class TestReportPublisher:
+    """Tests for the report RabbitMQ publisher helper."""
+
+    def test_publish_report_job(self, monkeypatch):
+        """Test that the publisher declares the topic exchange and publishes JSON."""
+
+        captured = {}
+
+        class FakeChannel:
+            def exchange_declare(self, **kwargs):
+                captured["exchange_declare"] = kwargs
+
+            def basic_publish(self, **kwargs):
+                captured["basic_publish"] = kwargs
+
+        class FakeConnection:
+            def channel(self):
+                return FakeChannel()
+
+            def close(self):
+                captured["closed"] = True
+
+        monkeypatch.setenv(
+            "RABBITMQ_URL", "amqp://guest:guest@localhost:5672/%2F"
+        )
+        monkeypatch.setattr(
+            "dbms.utils.pika.URLParameters",
+            lambda url: url,
+        )
+        monkeypatch.setattr(
+            "dbms.utils.pika.BlockingConnection",
+            lambda parameters: FakeConnection(),
+        )
+
+        publish_report_job(42)
+
+        assert captured["exchange_declare"] == {
+            "exchange": "report_events",
+            "exchange_type": "topic",
+            "durable": True,
+        }
+        assert captured["basic_publish"]["exchange"] == "report_events"
+        assert captured["basic_publish"]["routing_key"] == "report.job.pending"
+        assert json.loads(captured["basic_publish"]["body"]) == {
+            "type": "report.job.pending",
+            "job_id": 42,
+        }
+        assert captured["closed"] is True
+
+
 class TestIngredientCollection:
     """Tests for the IngredientCollection resource (/api/ingredients/)."""
 
@@ -1039,4 +1179,3 @@ class TestToken:
         """Test logout with invalid token fails."""
         resp = client.delete(self.URL, headers={"dbms-api-key": "invalid_key"})
         assert resp.status_code == 401
-

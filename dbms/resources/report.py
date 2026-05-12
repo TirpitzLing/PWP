@@ -25,25 +25,6 @@ class Report(Resource):
     """Resource for creating nutrition report jobs."""
 
     @api_key_required
-    def get(self, user):
-        """List report jobs for the authenticated user."""
-        if request.current_user.id != user.id:
-            raise Forbidden(
-                description="You can only view reports for your own account."
-            )
-
-        query = ReportJob.query.filter_by(user_id=user.id)
-        status = request.args.get("status")
-        if status:
-            query = query.filter_by(status=status)
-
-        jobs = query.order_by(ReportJob.created_at.desc()).all()
-        return {
-            "items": [job.serialize() for job in jobs],
-            "count": len(jobs),
-        }
-
-    @api_key_required
     def post(self, user):
         """Create a report job for selected recipe ids."""
         if request.current_user.id != user.id:
@@ -64,7 +45,7 @@ class Report(Resource):
         recipe_ids = request.json["recipe_ids"]
 
         for recipe_id in recipe_ids:
-            recipe = Recipe.query.get(recipe_id)
+            recipe = db.session.get(Recipe, recipe_id)
             if recipe is None:
                 raise NotFound(description=f"Recipe {recipe_id} not found.")
             if recipe.created_by != user.id:
@@ -102,7 +83,11 @@ class ReportStatus(Resource):
     @api_key_required
     def get(self, user, report_job_id):
         """Return status information for a report job."""
-        job = ReportJob.query.get_or_404(report_job_id)
+        job = db.session.get(ReportJob, report_job_id)
+        if job is None:
+            raise NotFound(
+                description=f"Report job {report_job_id} not found."
+            )
 
         if request.current_user.id != user.id or job.user_id != user.id:
             raise Forbidden(
@@ -118,7 +103,11 @@ class ReportDownload(Resource):
     @api_key_required
     def get(self, user, report_job_id):
         """Download the generated report PDF."""
-        job = ReportJob.query.get_or_404(report_job_id)
+        job = db.session.get(ReportJob, report_job_id)
+        if job is None:
+            raise NotFound(
+                description=f"Report job {report_job_id} not found."
+            )
 
         if request.current_user.id != user.id or job.user_id != user.id:
             raise Forbidden(
