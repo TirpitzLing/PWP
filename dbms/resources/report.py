@@ -48,10 +48,6 @@ class Report(Resource):
             recipe = db.session.get(Recipe, recipe_id)
             if recipe is None:
                 raise NotFound(description=f"Recipe {recipe_id} not found.")
-            if recipe.created_by != user.id:
-                raise Forbidden(
-                    description="All recipe ids must belong to the user."
-                )
 
         job = ReportJob(
             user_id=user.id,

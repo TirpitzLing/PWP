@@ -1130,8 +1130,13 @@ class TestReport:
         resp = client.post(self.COLLECTION_URL, json={"recipe_ids": [9999]})
         assert resp.status_code == 404
 
-    def test_post_recipe_not_owned(self, client):
-        """Test creating a report with a recipe owned by another user returns 403."""
+    def test_post_recipe_not_owned(self, client, monkeypatch):
+        """Test creating a report with another user's recipe still succeeds."""
+        monkeypatch.setattr(
+            "dbms.resources.report.publish_report_job",
+            lambda job_id: None,
+        )
+
         with client.application.app_context():
             admin = db.session.get(User, 2)
             recipe = Recipe(
@@ -1148,7 +1153,7 @@ class TestReport:
         resp = client.post(
             self.COLLECTION_URL, json={"recipe_ids": [admin_recipe_id]}
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 202
 
     def test_status_not_found(self, client):
         """Test accessing a non-existent report job returns 404."""
@@ -1177,8 +1182,10 @@ class TestReport:
 
     def test_post_publish_failure(self, client, monkeypatch):
         """Test creating a report when publishing fails returns 503."""
+
         def fail_publish(job_id):
             raise RuntimeError("RabbitMQ not available")
+
         monkeypatch.setattr(
             "dbms.resources.report.publish_report_job", fail_publish
         )
@@ -1490,7 +1497,9 @@ class TestToken:
 
     def test_post_wrong_mediatype(self, client):
         """Test login with invalid media type returns 415."""
-        resp = client.post(self.URL, data="not json", content_type="text/plain")
+        resp = client.post(
+            self.URL, data="not json", content_type="text/plain"
+        )
         assert resp.status_code == 415
 
     def test_delete_logout_unauthorized(self, client):
