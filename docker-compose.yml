@@ -2,11 +2,14 @@ services:
   # Local RabbitMQ broker for background report jobs
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: dbms-rabbitmq
-    restart: always
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Backend API
   dbms-api:
@@ -44,3 +47,20 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro 
     depends_on:
       - dbms-api
+
+  # Background worker that consumes jobs from RabbitMQ queue report_jobs
+  report-worker:
+    build: .
+    container_name: dbms-report-worker
+    restart: always
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
+    command: >
+      sh -c "python -m dbms.auxiliary_services.report_generator"
+    volumes:
+      - .:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      dbms-api:
+        condition: service_started

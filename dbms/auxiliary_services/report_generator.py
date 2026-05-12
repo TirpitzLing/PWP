@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-
+import time
 import pika
 
 from dbms import create_app
@@ -143,6 +143,7 @@ def compare_to_standard(totals: dict[str, float]) -> dict:
 
 
 def process_job(job: ReportJob, instance_path: str):
+    print(f"Processing report job {job.id} for user {job.user_id}")
     job.status = "running"
     job.started_at = datetime.now(timezone.utc)
     db.session.commit()
@@ -224,7 +225,7 @@ def process_pending_jobs_once(instance_path: str) -> int:
 
 def handle_message(ch, method, properties, body, app):
     job = None
-
+    print("[worker] received message:", body.decode())
     try:
         event = json.loads(body.decode())
 
@@ -233,7 +234,8 @@ def handle_message(ch, method, properties, body, app):
             return
 
         job_id = event["job_id"]
-        job = ReportJob.query.get(job_id)
+        # Use Session.get() to avoid SQLAlchemy legacy Query.get() warning
+        job = db.session.get(ReportJob, job_id)
 
         if not job:
             raise ValueError(f"Job {job_id} not found")
@@ -244,9 +246,11 @@ def handle_message(ch, method, properties, body, app):
             return
 
         process_job(job, app.instance_path)
+        print(f"Processing report job {job_id}")
         ch.basic_ack(method.delivery_tag)
 
     except Exception as e:
+        print(f"[worker] failed to process job {job_id}: {e}")
         if job:
             job.status = "failed"
             job.error_message = str(e)
@@ -256,14 +260,36 @@ def handle_message(ch, method, properties, body, app):
         ch.basic_nack(method.delivery_tag, requeue=False)
 
 
+def connect_with_retry(url, retries=10, delay=3):
+
+    for i in range(retries):
+
+        try:
+
+            return pika.BlockingConnection(pika.URLParameters(url))
+
+        except Exception as e:
+
+            print(f"[RabbitMQ] connect failed ({i+1}/{retries}): {e}")
+
+            time.sleep(delay)
+
+    raise RuntimeError("Cannot connect to RabbitMQ")
+
+
 def run_worker():
     app = create_app()
     url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F")
 
     with app.app_context():
+        # Log instance path and DB file presence for debugging shared-volume issues
+        db_path = os.path.join(app.instance_path, "dbms.db")
+        print(f"[worker] app.instance_path: {app.instance_path}")
+        print(f"[worker] db file: {db_path} exists={os.path.exists(db_path)}")
+
         process_pending_jobs_once(app.instance_path)
 
-        conn = pika.BlockingConnection(pika.URLParameters(url))
+        conn = connect_with_retry(url)
         ch = conn.channel()
 
         ch.exchange_declare(

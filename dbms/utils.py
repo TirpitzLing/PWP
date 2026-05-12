@@ -61,8 +61,10 @@ def publish_report_job(
             body=json.dumps({"type": routing_key, "job_id": job_id}),
             properties=pika.BasicProperties(delivery_mode=2),
         )
+        print("[api] publishing job_id:", job_id)
         connection.close()
     except Exception as exc:
+        print("[api] failed to publish job_id:", job_id)
         raise RuntimeError(
             f"Failed to publish report job event '{routing_key}': {exc}"
         ) from exc
