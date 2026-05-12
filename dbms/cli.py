@@ -46,10 +46,8 @@ def populate_db_command():
     admin = get_or_create_user(
         "admin", "admin@test.com", "admin123", "admin-secret-key"
     )
-    alice = get_or_create_user(
-        "alice", "alice@test.com", "alice123", "alice-key"
-    )
-    bob = get_or_create_user("bob", "bob@test.com", "bob123", "bob-key")
+    get_or_create_user("alice", "alice@test.com", "alice123", "alice-key")
+    get_or_create_user("bob", "bob@test.com", "bob123", "bob-key")
     oulu_chef = get_or_create_user(
         "oulu_chef",
         "chef@student.oulu.fi",
@@ -116,22 +114,22 @@ def populate_db_command():
         db.session.commit()
         return r
 
-    r1 = get_or_create_recipe(
-        "Tomato and Egg Stir-fry",
-        "1. Beat the eggs. 2. Chop tomatoes into chunks. 3. Scramble eggs in hot oil and set aside. 4. Stir-fry tomatoes until soft and juicy, return eggs to the pan, season with salt and a pinch of sugar, and serve.",
-        2,
-        "Chinese",
-        "https://images.getrecipekit.com/20231103000214-andy-20cooks-20-20tomato-20egg-20stir-fry.jpg",
-        oulu_chef,
-    )
+    # r1 = get_or_create_recipe(
+    #     "Tomato and Egg Stir-fry",
+    #     "1. Beat the eggs. 2. Chop tomatoes into chunks. 3. Scramble eggs in hot oil and set aside. 4. Stir-fry tomatoes until soft and juicy, return eggs to the pan, season with salt and a pinch of sugar, and serve.",
+    #     2,
+    #     "Chinese",
+    #     "https://images.getrecipekit.com/20231103000214-andy-20cooks-20-20tomato-20egg-20stir-fry.jpg",
+    #     admin,
+    # )
 
-    r2 = get_or_create_recipe(
+    r1 = get_or_create_recipe(
         "Chicken Rice Bowl",
         "Cook chicken and serve with rice.",
         1,
         "Asian",
         None,
-        alice,
+        admin,
     )
 
     # Attach ingredients to recipes idempotently
@@ -152,13 +150,13 @@ def populate_db_command():
         )
         db.session.add(ri)
 
-    ensure_recipe_ingredient(r1, "Tomato", 300, "grams")
-    ensure_recipe_ingredient(r1, "Egg", 100, "grams")
-    ensure_recipe_ingredient(r1, "Salt", 5, "g")
+    # ensure_recipe_ingredient(r1, "Tomato", 300, "grams")
+    # ensure_recipe_ingredient(r1, "Egg", 100, "grams")
+    # ensure_recipe_ingredient(r1, "Salt", 5, "g")
 
-    ensure_recipe_ingredient(r2, "Chicken Breast", 150, "g")
-    ensure_recipe_ingredient(r2, "Rice", 200, "g")
-    ensure_recipe_ingredient(r2, "Olive Oil", 10, "g")
+    ensure_recipe_ingredient(r1, "Chicken Breast", 150, "g")
+    ensure_recipe_ingredient(r1, "Rice", 200, "g")
+    ensure_recipe_ingredient(r1, "Olive Oil", 10, "g")
 
     db.session.commit()
 
