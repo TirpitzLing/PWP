@@ -1,38 +1,29 @@
-"""Standalone nutrition report worker.
-
-Communicates with the DBMS API exclusively via HTTP; has zero knowledge of the
-API's database or ORM.  Receives job events from RabbitMQ and posts results
-back to the API.
-"""
+"""RabbitMQ consumer — fetches nutrition from DBMS API, generates PDF."""
 
 import base64
 import json
 import os
 import time
-from datetime import datetime, timezone
 
 import pika
 import requests
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
+import storage
 
-API_BASE_URL = os.getenv(
-    "API_BASE_URL", "http://dbms-api:8000/api"
+# ---------------------------------------------------------------------------
+API_BASE = os.getenv(
+    "DBMS_API_BASE_URL", "http://dbms-api:8000/api"
 ).rstrip("/")
 
-WORKER_API_KEY = os.getenv(
-    "WORKER_API_KEY", ""
-)
+API_KEY = os.getenv("DBMS_API_KEY", "")
 
 RABBITMQ_URL = os.getenv(
     "RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/%2F"
 )
 
-EVENT_BUS_EXCHANGE = "report_events"
-EVENT_BUS_ROUTING_KEY = "report.job.pending"
-REPORT_QUEUE = "report_jobs"
+EVENT_EXCHANGE = "report_events"
+EVENT_ROUTING_KEY = "report.job.pending"
+QUEUE_NAME = "report_jobs"
 
 STANDARD_INTAKE = {
     "calories": 700.0,
@@ -41,22 +32,24 @@ STANDARD_INTAKE = {
     "fat": 25.0,
 }
 
+PDF_DIR = os.path.join(os.path.dirname(__file__), "pdfs")
+
+
 # ---------------------------------------------------------------------------
-# HTTP helpers (the ONLY way this worker touches the API)
+# HTTP helpers
 # ---------------------------------------------------------------------------
 
 
-def _api_headers():
+def _headers():
     return {
         "Content-Type": "application/json",
-        "dbms-api-key": WORKER_API_KEY,
+        "dbms-api-key": API_KEY,
     }
 
 
-def _fetch_nutrition(recipe_id: int) -> dict[str, float]:
-    """Call GET /api/recipes/{id}/nutrition/."""
-    url = f"{API_BASE_URL}/recipes/{recipe_id}/nutrition/"
-    resp = requests.get(url, headers=_api_headers(), timeout=15)
+def _fetch_nutrition(recipe_id: int) -> dict:
+    url = f"{API_BASE}/recipes/{recipe_id}/nutrition/"
+    resp = requests.get(url, headers=_headers(), timeout=15)
     resp.raise_for_status()
     data = resp.json()
     return {
@@ -67,55 +60,20 @@ def _fetch_nutrition(recipe_id: int) -> dict[str, float]:
     }
 
 
-def _submit_result(
-    user_id: int,
-    job_id: int,
-    *,
-    status: str = "done",
-    totals: dict | None = None,
-    comparison: dict | None = None,
-    pdf_base64: str | None = None,
-    filename: str = "",
-    error_message: str | None = None,
-):
-    """Call PUT /api/users/{user}/reports/{job}/ to post job results."""
-    url = f"{API_BASE_URL}/users/{user_id}/reports/{job_id}/"
-    body: dict = {"status": status}
-
-    if status == "failed":
-        body["error_message"] = error_message or "Unknown error"
-    else:
-        body.update(
-            {
-                "total_calories": totals.get("calories", 0.0),
-                "total_carbs": totals.get("carbs", 0.0),
-                "total_protein": totals.get("protein", 0.0),
-                "total_fat": totals.get("fat", 0.0),
-                "comparison_json": json.dumps(comparison),
-                "pdf_base64": pdf_base64 or "",
-                "filename": filename or f"report-{job_id}.pdf",
-            }
-        )
-
-    resp = requests.put(url, json=body, headers=_api_headers(), timeout=30)
+def _fetch_recipe_title(recipe_id: int) -> str:
+    url = f"{API_BASE}/recipes/{recipe_id}/"
+    resp = requests.get(url, headers=_headers(), timeout=15)
     resp.raise_for_status()
+    return resp.json().get("title", f"Recipe {recipe_id}")
 
 
 # ---------------------------------------------------------------------------
-# Business logic (pure functions — testable without network)
+# Business logic
 # ---------------------------------------------------------------------------
 
 
-def calculate_totals(
-    recipe_ids: list[int],
-) -> dict[str, float]:
-    """Fetch nutrition for each recipe via API and sum the totals."""
-    totals: dict[str, float] = {
-        "calories": 0.0,
-        "carbs": 0.0,
-        "protein": 0.0,
-        "fat": 0.0,
-    }
+def calculate_totals(recipe_ids: list[int]) -> dict:
+    totals = {"calories": 0.0, "carbs": 0.0, "protein": 0.0, "fat": 0.0}
     for rid in recipe_ids:
         nt = _fetch_nutrition(rid)
         for k in totals:
@@ -123,40 +81,36 @@ def calculate_totals(
     return totals
 
 
-def compare_to_standard(
-    totals: dict[str, float],
-) -> dict:
-    """Compare nutrition totals against standard daily intake values."""
+def compare_to_standard(totals: dict) -> dict:
     result = {}
-    for nutrient, standard in STANDARD_INTAKE.items():
+    for nutrient, std in STANDARD_INTAKE.items():
         actual = totals.get(nutrient, 0.0)
         result[nutrient] = {
             "total": actual,
-            "standard": standard,
-            "difference": round(actual - standard, 2),
-            "percent": (
-                round((actual / standard) * 100, 2) if standard else 0
-            ),
+            "standard": std,
+            "difference": round(actual - std, 2),
+            "percent": round((actual / std) * 100, 2) if std else 0,
         }
     return result
+
+
+# ---------------------------------------------------------------------------
+# PDF generation
+# ---------------------------------------------------------------------------
 
 
 def _escape_pdf_text(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def build_pdf_bytes(
-    job_id: int, user_id: int, recipe_titles: list[str], totals: dict
-) -> bytes:
-    """Generate a minimal PDF report without external libraries."""
+def build_pdf_bytes(job_id: int, titles: list[str], totals: dict) -> bytes:
     lines = [
         "Nutrition Report",
         f"Job: {job_id}",
-        f"User: {user_id}",
         "",
     ]
-    for title in recipe_titles:
-        lines.append(f"- {title}")
+    for t in titles:
+        lines.append(f"- {t}")
     lines += [
         "",
         f"Calories: {totals['calories']}",
@@ -190,7 +144,7 @@ def build_pdf_bytes(
     ]
 
     pdf = bytearray(b"%PDF-1.4\n")
-    offsets: list[int] = [0]
+    offsets = [0]
     for i, obj in enumerate(objects, start=1):
         offsets.append(len(pdf))
         pdf.extend(f"{i} 0 obj\n".encode())
@@ -213,48 +167,41 @@ def build_pdf_bytes(
 
 
 # ---------------------------------------------------------------------------
-# Job processing (single job)
+# Job processing
 # ---------------------------------------------------------------------------
 
 
-def process_job(job_id: int, user_id: int, recipe_ids: list[int]):
-    """Fetch nutrition, generate PDF, and submit results back to the API."""
-    print(
-        f"[worker] processing job {job_id} "
-        f"user={user_id} recipes={recipe_ids}"
-    )
+def process_job(job_id: int, recipe_ids: list[int]):
+    print(f"[worker] processing job {job_id}  recipes={recipe_ids}")
 
-    # Fetch titles from the API
-    recipe_titles: list[str] = []
-    for rid in recipe_ids:
-        try:
-            url = f"{API_BASE_URL}/recipes/{rid}/"
-            resp = requests.get(
-                url, headers=_api_headers(), timeout=15
-            )
-            resp.raise_for_status()
-            recipe_titles.append(
-                resp.json().get("title", f"Recipe {rid}")
-            )
-        except Exception as exc:
-            print(f"[worker] warning: could not fetch recipe {rid}: {exc}")
-            recipe_titles.append(f"Recipe {rid}")
+    storage.update_job(job_id, status="running")
 
-    totals = calculate_totals(recipe_ids)
-    comparison = compare_to_standard(totals)
-    pdf = build_pdf_bytes(job_id, user_id, recipe_titles, totals)
-    pdf_b64 = base64.b64encode(pdf).decode("ascii")
+    try:
+        titles = [_fetch_recipe_title(rid) for rid in recipe_ids]
+        totals = calculate_totals(recipe_ids)
+        comparison = compare_to_standard(totals)
+        pdf = build_pdf_bytes(job_id, titles, totals)
 
-    _submit_result(
-        user_id,
-        job_id,
-        status="done",
-        totals=totals,
-        comparison=comparison,
-        pdf_base64=pdf_b64,
-        filename=f"report-{job_id}.pdf",
-    )
-    print(f"[worker] job {job_id} completed")
+        os.makedirs(PDF_DIR, exist_ok=True)
+        pdf_path = os.path.join(PDF_DIR, f"report-{job_id}.pdf")
+        with open(pdf_path, "wb") as f:
+            f.write(pdf)
+
+        storage.update_job(
+            job_id,
+            status="done",
+            total_calories=totals["calories"],
+            total_carbs=totals["carbs"],
+            total_protein=totals["protein"],
+            total_fat=totals["fat"],
+            comparison_json=json.dumps(comparison),
+            pdf_path=pdf_path,
+        )
+        print(f"[worker] job {job_id} done")
+
+    except Exception as exc:
+        print(f"[worker] job {job_id} failed: {exc}")
+        storage.update_job(job_id, status="failed", error_message=str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -263,83 +210,52 @@ def process_job(job_id: int, user_id: int, recipe_ids: list[int]):
 
 
 def handle_message(ch, method, properties, body):
-    """Process one incoming RabbitMQ message."""
     event = json.loads(body.decode())
     print(f"[worker] received: {event}")
 
-    if event.get("type") != EVENT_BUS_ROUTING_KEY:
+    if event.get("type") != EVENT_ROUTING_KEY:
         ch.basic_ack(method.delivery_tag)
         return
 
     job_id = event["job_id"]
-    user_id = event["user_id"]
     recipe_ids = event.get("recipe_ids", [])
 
-    try:
-        process_job(job_id, user_id, recipe_ids)
-        ch.basic_ack(method.delivery_tag)
-    except Exception as exc:
-        print(f"[worker] job {job_id} failed: {exc}")
-        try:
-            _submit_result(
-                user_id,
-                job_id,
-                status="failed",
-                error_message=str(exc),
-            )
-        except Exception as submit_exc:
-            print(
-                f"[worker] could not submit failure for job {job_id}: "
-                f"{submit_exc}"
-            )
-        ch.basic_nack(method.delivery_tag, requeue=False)
+    process_job(job_id, recipe_ids)
+    ch.basic_ack(method.delivery_tag)
 
 
-def connect_with_retry(
-    url: str, retries: int = 10, delay: int = 3
-) -> pika.BlockingConnection:
-    """Retry connecting to RabbitMQ until it becomes available."""
+def connect_with_retry(retries=10, delay=3):
     for attempt in range(1, retries + 1):
         try:
-            return pika.BlockingConnection(pika.URLParameters(url))
+            return pika.BlockingConnection(
+                pika.URLParameters(RABBITMQ_URL)
+            )
         except Exception as exc:
             print(
-                f"[RabbitMQ] connect failed "
-                f"({attempt}/{retries}): {exc}"
+                f"[RabbitMQ] connect failed ({attempt}/{retries}): {exc}"
             )
             time.sleep(delay)
     raise RuntimeError("Cannot connect to RabbitMQ")
 
 
-def run_worker():
-    """Entry point: connect to RabbitMQ and start consuming."""
-    print(
-        f"[worker] API base: {API_BASE_URL}  "
-        f"RabbitMQ: {RABBITMQ_URL}"
-    )
+def connect_and_consume():
+    """Blocking call — meant to run in a background thread."""
+    print(f"[worker] API: {API_BASE}  RabbitMQ: {RABBITMQ_URL}")
 
-    conn = connect_with_retry(RABBITMQ_URL)
+    conn = connect_with_retry()
     ch = conn.channel()
 
     ch.exchange_declare(
-        exchange=EVENT_BUS_EXCHANGE,
-        exchange_type="topic",
-        durable=True,
+        exchange=EVENT_EXCHANGE, exchange_type="topic", durable=True
     )
-    ch.queue_declare(queue=REPORT_QUEUE, durable=True)
+    ch.queue_declare(queue=QUEUE_NAME, durable=True)
     ch.queue_bind(
-        exchange=EVENT_BUS_EXCHANGE,
-        queue=REPORT_QUEUE,
-        routing_key=EVENT_BUS_ROUTING_KEY,
+        exchange=EVENT_EXCHANGE,
+        queue=QUEUE_NAME,
+        routing_key=EVENT_ROUTING_KEY,
     )
     ch.basic_qos(prefetch_count=1)
-    ch.basic_consume(
-        queue=REPORT_QUEUE, on_message_callback=handle_message
-    )
+    ch.basic_consume(queue=QUEUE_NAME, on_message_callback=handle_message)
 
     print("[worker] started — waiting for report jobs")
     ch.start_consuming()
-
-
-if __name__ == "__main__":
-    run_worker()

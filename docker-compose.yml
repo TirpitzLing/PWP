@@ -16,9 +16,6 @@ services:
     build: .
     container_name: dbms-api
     restart: always
-    environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
-      - WORKER_API_KEY=worker-secret-key-change-me
     command: >
       sh -c "flask --app=dbms init-db &&
              flask --app=dbms populate-db &&
@@ -50,17 +47,20 @@ services:
     depends_on:
       dbms-api:
         condition: service_healthy
+      aux-service:
+        condition: service_started
 
-  # Standalone worker — communicates with the API via HTTP only.
-  # No database access, no dbms imports.
-  report-worker:
+  # Auxiliary report service — has its own Flask API + RabbitMQ worker.
+  # Clients call this directly (via nginx /aux/) for report operations.
+  # It calls the DBMS API for nutrition data; never touches the DBMS database.
+  aux-service:
     build: ./report_worker
-    container_name: dbms-report-worker
+    container_name: aux-service
     restart: always
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
-      - API_BASE_URL=http://dbms-api:8000/api
-      - WORKER_API_KEY=worker-secret-key-change-me
+      - DBMS_API_BASE_URL=http://dbms-api:8000/api
+      - DBMS_API_KEY=admin-secret-key
     depends_on:
       rabbitmq:
         condition: service_healthy
