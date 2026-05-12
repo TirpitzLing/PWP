@@ -103,21 +103,35 @@ def _escape_pdf_text(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def build_pdf_bytes(job_id: int, titles: list[str], totals: dict) -> bytes:
+def build_pdf_bytes(
+    job_id: int, titles: list[str], totals: dict, comparison: dict
+) -> bytes:
     lines = [
         "Nutrition Report",
         f"Job: {job_id}",
         "",
+        "Recipes:",
     ]
     for t in titles:
-        lines.append(f"- {t}")
+        lines.append(f"  - {t}")
     lines += [
         "",
-        f"Calories: {totals['calories']}",
-        f"Carbs: {totals['carbs']}",
-        f"Protein: {totals['protein']}",
-        f"Fat: {totals['fat']}",
+        "--- Totals ---",
+        f"Calories : {totals['calories']}",
+        f"Carbs    : {totals['carbs']} g",
+        f"Protein  : {totals['protein']} g",
+        f"Fat      : {totals['fat']} g",
+        "",
+        "--- vs Standard Daily Intake ---",
     ]
+    for nutrient, data in comparison.items():
+        diff = data['difference']
+        sign = "+" if diff > 0 else ""
+        lines.append(
+            f"{nutrient.capitalize():12s}  "
+            f"{data['total']} / {data['standard']}  "
+            f"({sign}{diff})  {data['percent']}%"
+        )
 
     content_lines = ["BT", "/F1 12 Tf", "14 TL", "50 800 Td"]
     for i, line in enumerate(lines):
@@ -180,7 +194,7 @@ def process_job(job_id: int, recipe_ids: list[int]):
         titles = [_fetch_recipe_title(rid) for rid in recipe_ids]
         totals = calculate_totals(recipe_ids)
         comparison = compare_to_standard(totals)
-        pdf = build_pdf_bytes(job_id, titles, totals)
+        pdf = build_pdf_bytes(job_id, titles, totals, comparison)
 
         os.makedirs(PDF_DIR, exist_ok=True)
         pdf_path = os.path.join(PDF_DIR, f"report-{job_id}.pdf")

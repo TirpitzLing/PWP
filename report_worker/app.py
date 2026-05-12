@@ -68,13 +68,32 @@ def create_app():
         ):
             return jsonify({"error": "recipe_ids must be a list of ints"}), 400
 
+        wait = request.args.get("wait", "").lower() == "true"
+
         job = create_job(recipe_ids)
         _publish_job(job["id"], recipe_ids)
-        return (
-            jsonify(job),
-            202,
-            {"Location": f"/reports/{job['id']}/"},
-        )
+
+        if not wait:
+            return (
+                jsonify(job),
+                202,
+                {"Location": f"/reports/{job['id']}/"},
+            )
+
+        # Block until the worker finishes
+        import time as _time
+        job_id = job["id"]
+        for _ in range(60):  # 30s timeout
+            _time.sleep(0.5)
+            current = get_job(job_id)
+            if current["status"] == "done":
+                return jsonify(current)
+            if current["status"] == "failed":
+                return (
+                    jsonify(current),
+                    500,
+                )
+        return jsonify({"error": "Timeout"}), 504
 
     # ---------------------------------------------------------------
     # GET /reports/<id>/  — get job status & results
