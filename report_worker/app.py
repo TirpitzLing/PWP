@@ -140,11 +140,14 @@ def create_app():
     # ---------------------------------------------------------------
     # Start the RabbitMQ consumer in a background thread
     # ---------------------------------------------------------------
-    def _start_worker():
-        print("[aux] starting RabbitMQ consumer thread")
-        connect_and_consume()
+    if not app.config.get("TESTING"):
+        def _start_worker():
+            print("[aux] starting RabbitMQ consumer thread")
+            connect_and_consume()
 
-    worker_thread = threading.Thread(target=_start_worker, daemon=True)
-    worker_thread.start()
+        worker_thread = threading.Thread(
+            target=_start_worker, daemon=True
+        )
+        worker_thread.start()
 
     return app

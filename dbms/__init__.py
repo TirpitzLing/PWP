@@ -39,9 +39,6 @@ def create_app(test_config=None):
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
             CACHE_TYPE="FileSystemCache",
             CACHE_DIR=os.path.join(app.instance_path, "cache"),
-            WORKER_API_KEY=os.getenv(
-                "WORKER_API_KEY", "worker-secret-key-change-me"
-            ),
         )
     else:
         app.config.from_mapping(test_config)

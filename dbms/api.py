@@ -7,11 +7,6 @@ from flask_restful import Api
 from flask_cors import CORS
 from dbms.resources.recipe import RecipeCollection, RecipeItem, RecipeNutrition
 from dbms.resources.ingredient import IngredientCollection, IngredientItem
-from dbms.resources.report import (
-    Report,
-    ReportStatus,
-    ReportDownload,
-)
 from dbms.resources.user import UserCollection, UserItem, UserRecipeCollection
 from dbms.resources.recipe_ingredient import (
     RecipeIngredientCollection,
@@ -42,13 +37,6 @@ api.add_resource(
 api.add_resource(UserCollection, "/users/")
 api.add_resource(UserItem, "/users/<user:user>/")
 api.add_resource(UserRecipeCollection, "/users/<user:user>/recipes/")
-api.add_resource(Report, "/users/<user:user>/reports/")
-api.add_resource(
-    ReportStatus, "/users/<user:user>/reports/<int:report_job_id>/"
-)
-api.add_resource(
-    ReportDownload, "/users/<user:user>/reports/<int:report_job_id>/download/"
-)
 
 api.add_resource(SaveCollection, "/users/<user:user>/saves/")
 api.add_resource(SaveItem, "/users/<user:user>/saves/<recipe:recipe>/")
