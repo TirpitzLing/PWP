@@ -133,7 +133,7 @@ To verify the environment is properly configured, perform the following tests:
     - **Windows (PowerShell):** `curl.exe -k -I https://localhost:10013/api/docs/`
     - **Linux/Mac:** `curl -k -I https://localhost:10013/api/docs/`
       _(Expected: `HTTP/1.1 200 OK`)_
-3.  **Database Check**: Confirm that the `instance/dbms.db` file is present in the project directory after startup.
+3.  **Database Check**: Confirm that the `instance/dbms.db` file is present in the project directory after startup. Also, you might want to run `sudo chmod -R 777 ./instance` to make sure that the program is able to make modifications to the `instance/dbms.db` database file. Otherwise you will only be able to browse the contant without modifying anything
 
 **Step 4: Initialize and Populate the Database**
 
