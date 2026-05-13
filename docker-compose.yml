@@ -61,7 +61,7 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2F
       - DBMS_API_BASE_URL=http://dbms-api:8000/api
       - DBMS_API_KEY=admin-secret-key
-      - GOOGLE_AI_API_KEY=AIzaSyBcT7_rtdYs-FW7NCEEB2slWQk2fGNa7Lg
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
     depends_on:
       rabbitmq:
         condition: service_healthy
