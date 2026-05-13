@@ -11,9 +11,9 @@ import requests
 import storage
 
 # ---------------------------------------------------------------------------
-API_BASE = os.getenv(
-    "DBMS_API_BASE_URL", "http://dbms-api:8000/api"
-).rstrip("/")
+API_BASE = os.getenv("DBMS_API_BASE_URL", "http://dbms-api:8000/api").rstrip(
+    "/"
+)
 
 API_KEY = os.getenv("DBMS_API_KEY", "")
 
@@ -26,10 +26,10 @@ EVENT_ROUTING_KEY = "report.job.pending"
 QUEUE_NAME = "report_jobs"
 
 STANDARD_INTAKE = {
-    "calories": 700.0,
-    "carbs": 80.0,
-    "protein": 45.0,
-    "fat": 25.0,
+    "calories": 350.0,
+    "carbs": 40.0,
+    "protein": 22.0,
+    "fat": 12.0,
 }
 
 PDF_DIR = os.path.join(os.path.dirname(__file__), "pdfs")
@@ -125,7 +125,7 @@ def build_pdf_bytes(
         "--- vs Standard Daily Intake ---",
     ]
     for nutrient, data in comparison.items():
-        diff = data['difference']
+        diff = data["difference"]
         sign = "+" if diff > 0 else ""
         lines.append(
             f"{nutrient.capitalize():12s}  "
@@ -241,13 +241,9 @@ def handle_message(ch, method, properties, body):
 def connect_with_retry(retries=10, delay=3):
     for attempt in range(1, retries + 1):
         try:
-            return pika.BlockingConnection(
-                pika.URLParameters(RABBITMQ_URL)
-            )
+            return pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
         except Exception as exc:
-            print(
-                f"[RabbitMQ] connect failed ({attempt}/{retries}): {exc}"
-            )
+            print(f"[RabbitMQ] connect failed ({attempt}/{retries}): {exc}")
             time.sleep(delay)
     raise RuntimeError("Cannot connect to RabbitMQ")
 
