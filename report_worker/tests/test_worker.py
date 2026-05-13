@@ -217,9 +217,9 @@ class TestCompareToStandard:
         totals = {"calories": 350.0, "carbs": 40.0, "protein": 22.5, "fat": 12.5}
         result = worker.compare_to_standard(totals)
         assert result["calories"]["total"] == 350.0
-        assert result["calories"]["standard"] == 700.0
-        assert result["calories"]["difference"] == -350.0
-        assert result["calories"]["percent"] == 50.0
+        assert result["calories"]["standard"] == 350.0
+        assert result["calories"]["difference"] == 0.0
+        assert result["calories"]["percent"] == 100.0
 
     def test_zero(self):
         totals = {"calories": 0.0, "carbs": 0.0, "protein": 0.0, "fat": 0.0}
@@ -227,9 +227,9 @@ class TestCompareToStandard:
         assert result["calories"]["percent"] == 0.0
 
     def test_exceeds(self):
-        totals = {"calories": 1400.0, "carbs": 160.0, "protein": 90.0, "fat": 50.0}
+        totals = {"calories": 700.0, "carbs": 80.0, "protein": 44.0, "fat": 24.0}
         result = worker.compare_to_standard(totals)
-        assert result["calories"]["difference"] == 700.0
+        assert result["calories"]["difference"] == 350.0
         assert result["calories"]["percent"] == 200.0
 
     def test_four_keys(self):

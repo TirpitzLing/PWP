@@ -73,6 +73,12 @@ def _fetch_recipe_title(recipe_id: int) -> str:
 
 
 def calculate_totals(recipe_ids: list[int]) -> dict:
+    """Sum nutrition data across *recipe_ids* by calling the DBMS API.
+
+    :param recipe_ids: list of recipe IDs to fetch nutrition for
+    :returns: dict with keys ``calories``, ``carbs``, ``protein``, ``fat``
+    :raises requests.HTTPError: if the DBMS API returns a non-2xx status
+    """
     totals = {"calories": 0.0, "carbs": 0.0, "protein": 0.0, "fat": 0.0}
     for rid in recipe_ids:
         nt = _fetch_nutrition(rid)
@@ -82,6 +88,12 @@ def calculate_totals(recipe_ids: list[int]) -> dict:
 
 
 def compare_to_standard(totals: dict) -> dict:
+    """Compare nutrition *totals* against ``STANDARD_INTAKE``.
+
+    :param totals: dict with ``calories``, ``carbs``, ``protein``, ``fat``
+    :returns: dict keyed by nutrient, each containing ``total``,
+        ``standard``, ``difference``, and ``percent``
+    """
     result = {}
     for nutrient, std in STANDARD_INTAKE.items():
         actual = totals.get(nutrient, 0.0)
@@ -106,6 +118,14 @@ def _escape_pdf_text(text: str) -> str:
 def build_pdf_bytes(
     job_id: int, titles: list[str], totals: dict, comparison: dict
 ) -> bytes:
+    """Generate a minimal PDF report without external libraries.
+
+    :param job_id: report job identifier
+    :param titles: recipe title strings to list in the report
+    :param totals: dict with ``calories``, ``carbs``, ``protein``, ``fat``
+    :param comparison: result of :func:`compare_to_standard`
+    :returns: raw PDF bytes (PDF 1.4)
+    """
     lines = [
         "Nutrition Report",
         f"Job: {job_id}",
@@ -186,7 +206,13 @@ def build_pdf_bytes(
 
 
 def process_job(job_id: int, recipe_ids: list[int]):
-    print(f"[worker] processing job {job_id}  recipes={recipe_ids}")
+    """Fetch nutrition from DBMS API, generate PDF, update *job_id* in storage.
+
+    :param job_id: report job ID in the local store
+    :param recipe_ids: recipe IDs to include in the report
+    :raises Exception: any failure is caught internally; the job is
+        marked ``failed`` in storage rather than propagating the error
+    """
 
     storage.update_job(job_id, status="running")
 
@@ -224,6 +250,13 @@ def process_job(job_id: int, recipe_ids: list[int]):
 
 
 def handle_message(ch, method, properties, body):
+    """RabbitMQ delivery callback — decode *body* and call :func:`process_job`.
+
+    :param ch: Pika channel
+    :param method: Pika deliver method frame
+    :param properties: message properties
+    :param body: raw message body (JSON bytes)
+    """
     event = json.loads(body.decode())
     print(f"[worker] received: {event}")
 
@@ -239,6 +272,13 @@ def handle_message(ch, method, properties, body):
 
 
 def connect_with_retry(retries=10, delay=3):
+    """Connect to RabbitMQ, retrying on failure.
+
+    :param retries: maximum number of attempts
+    :param delay: seconds to wait between attempts
+    :returns: ``pika.BlockingConnection``
+    :raises RuntimeError: if all attempts fail
+    """
     for attempt in range(1, retries + 1):
         try:
             return pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))

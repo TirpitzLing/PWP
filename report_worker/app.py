@@ -48,6 +48,11 @@ def _publish_job(job_id: int, recipe_ids: list[int]):
 
 
 def create_app():
+    """Create and configure the Flask application.
+
+    :returns: configured Flask app with all routes registered and the
+        RabbitMQ worker thread started (unless ``TESTING`` is set)
+    """
     app = Flask(__name__)
     CORS(app)
 
@@ -58,6 +63,14 @@ def create_app():
     # ---------------------------------------------------------------
     @app.route("/reports/", methods=["POST"])
     def create_report():
+        """Create a report job.  Add ``?wait=true`` to block until done.
+
+        :status 202: job created, processing started
+        :status 200: job completed (only with ``?wait=true``)
+        :status 400: missing or invalid ``recipe_ids``
+        :status 500: job failed during processing
+        :status 504: timeout waiting for job
+        """
         body = request.get_json(silent=True)
         if not body or "recipe_ids" not in body:
             return jsonify({"error": "Missing recipe_ids"}), 400
@@ -100,6 +113,12 @@ def create_app():
     # ---------------------------------------------------------------
     @app.route("/reports/<int:job_id>/", methods=["GET"])
     def report_status(job_id):
+        """Return job status and nutrition results.
+
+        :param job_id: report job ID
+        :status 200: job data returned
+        :status 404: job not found
+        """
         job = get_job(job_id)
         if job is None:
             return jsonify({"error": "Not found"}), 404
@@ -110,6 +129,13 @@ def create_app():
     # ---------------------------------------------------------------
     @app.route("/reports/<int:job_id>/download/", methods=["GET"])
     def report_download(job_id):
+        """Download the generated PDF report.
+
+        :param job_id: report job ID
+        :status 200: PDF file streamed
+        :status 404: job or file not found
+        :status 409: report not ready yet (status != done)
+        """
         job = get_job(job_id)
         if job is None:
             return jsonify({"error": "Not found"}), 404
