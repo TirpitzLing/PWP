@@ -5,3 +5,5 @@ instance/cache/
 nginx/certs/*.crt
 nginx/certs/*.key
 instance/
+# Local environment variables file (contains secrets)
+.env

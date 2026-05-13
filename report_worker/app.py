@@ -5,6 +5,7 @@ creation, status polling, and PDF download.
 """
 
 import json
+import logging
 import os
 import threading
 
@@ -15,6 +16,10 @@ from flask_swagger_ui import get_swaggerui_blueprint
 
 from storage import create_job, get_job
 from worker import connect_and_consume
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 PDF_DIR = os.path.join(os.path.dirname(__file__), "pdfs")
 
@@ -180,7 +185,7 @@ def create_app():
     # ---------------------------------------------------------------
     if not app.config.get("TESTING"):
         def _start_worker():
-            print("[aux] starting RabbitMQ consumer thread")
+            logger.info("Starting RabbitMQ consumer thread")
             connect_and_consume()
 
         worker_thread = threading.Thread(
