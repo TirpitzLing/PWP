@@ -343,7 +343,121 @@ flutter:
 
 > After changing `env.json`, rebuild the Flutter app with `flutter clean && flutter pub get && flutter run`.
 
-# 7. Deployment Configuration Tests
+# 7. Auxiliary Service — Nutrition Report Generator
+
+The auxiliary service (`report_worker/`) is a standalone Flask application that
+generates nutrition report PDFs.  It communicates with the DBMS API **exclusively
+via HTTP** — it never accesses the DBMS database directly.
+
+## Architecture
+
+```
+Client → POST /aux/reports/ → Nginx → Aux Service (Flask, port 5000)
+                                           │
+                                     Publishes to RabbitMQ
+                                           │
+                                     Worker thread picks up job
+                                           │
+                                     GET /api/recipes/{id}/nutrition/  (from DBMS API)
+                                           │
+                                     Generates PDF → stored locally
+                                           │
+Client ← GET /aux/reports/{id}/download/ ← PDF
+```
+
+## Prerequisites
+
+- Python 3.10+
+- The DBMS API must be running and reachable
+- RabbitMQ must be running (provided by Docker Compose)
+
+## Dependencies
+
+Defined in `report_worker/requirements.txt`:
+
+| Package | Purpose |
+|---|---|
+| `flask` | HTTP API framework |
+| `gunicorn` | Production WSGI server |
+| `flask-cors` | Cross-origin support |
+| `flask-swagger-ui` | Interactive API docs at `/aux/docs/` |
+| `pika` | RabbitMQ client |
+| `requests` | HTTP client for calling DBMS API |
+| `pyyaml` | Swagger YAML parsing |
+
+## How to Setup & Run
+
+### Option A: Docker Compose (Recommended)
+
+The service is included in `docker-compose.yml` as `aux-service`:
+
+```bash
+docker compose up -d --build aux-service
+```
+
+It is automatically wired up via Nginx — the `/aux/` URL prefix routes to the
+aux service.  No manual configuration needed.
+
+Environment variables (set in `docker-compose.yml`):
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `RABBITMQ_URL` | RabbitMQ connection string | `amqp://guest:guest@rabbitmq:5672/%2F` |
+| `DBMS_API_BASE_URL` | DBMS API base URL | `http://dbms-api:8000/api` |
+| `DBMS_API_KEY` | API key for DBMS API calls | `admin-secret-key` |
+
+### Option B: Manual Setup
+
+```bash
+cd report_worker
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# Start with gunicorn (worker thread starts automatically)
+gunicorn -w 1 --threads 4 -b 0.0.0.0:5000 app:create_app
+```
+
+## API Endpoints
+
+All paths below are prefixed with `/aux` by Nginx.  The aux service's Flask
+routes are at `/reports/…` internally; clients always use the `/aux` prefix.
+
+Full interactive documentation: `https://<host>:10013/aux/docs/`
+
+| Method | Client-facing URL | Description |
+|---|---|---|
+| `POST` | `/aux/reports/` | Create a report job. Body: `{"recipe_ids": [1,2,3]}`. Add `?wait=true` to block until done. |
+| `GET` | `/aux/reports/{id}/` | Get job status and nutrition data |
+| `GET` | `/aux/reports/{id}/download/` | Download the generated PDF |
+
+## Connection to the Main API
+
+The aux service calls the DBMS API at:
+
+```
+GET /api/recipes/{id}/           — fetch recipe title
+GET /api/recipes/{id}/nutrition/ — fetch nutrition data
+```
+
+It authenticates with the `dbms-api-key` header using the admin API key
+(`admin-secret-key` by default, configured via `DBMS_API_KEY`).
+
+## Running Tests
+
+```bash
+cd report_worker
+pip install pytest pytest-cov
+pytest tests/ -v --cov=. --cov-report=term-missing
+```
+
+## Linting
+
+```bash
+pip install pylint
+pylint report_worker/
+```
+
+# 8. Deployment Configuration Tests
 
 To verify that the production environment is properly configured, isolated, and functional, please run the following tests sequentially. **Ensure you are in the project root directory before running any commands.**
 

@@ -126,10 +126,22 @@ def create_app():
         )
 
     # ---------------------------------------------------------------
-    # Swagger UI at /docs/
+    # Swagger UI at /docs/ — spec must also be served under /docs/ so
+    # nginx proxies it to aux-service instead of DBMS API.
     # ---------------------------------------------------------------
     swagger_url = "/docs"
-    api_url = "/static/schema/swagger.yaml"
+    api_url = "/docs/swagger.yaml"
+
+    @app.route("/docs/swagger.yaml")
+    def _swagger_spec():
+        from flask import send_from_directory
+
+        return send_from_directory(
+            os.path.join(os.path.dirname(__file__), "static", "schema"),
+            "swagger.yaml",
+            mimetype="text/yaml",
+        )
+
     swagger_blueprint = get_swaggerui_blueprint(
         swagger_url,
         api_url,
