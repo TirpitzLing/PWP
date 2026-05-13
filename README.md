@@ -89,32 +89,30 @@ _(This creates `server.crt` and `server.key` inside the `nginx/certs/` folder)._
 
 **Step 2: Configure Port Forwarding on Deployment Server**
 
-For the API server to be accessible externally, you must obtain a public IP address from your hosting provider. As an alternative, the application can be deployed on a personal computer configured with public IP access. 
+For the API server to be accessible externally, you must obtain a public IP address from your hosting provider. As an alternative, the application can be deployed on a personal computer configured with public IP access.
 
 Here is an example on how to deploy the Docker container on a Windows operating system using a public IP:
 
- - **Port Forwarding(Router Settings)**: 
-   - **Find your Local IP**: Open Command Prompt (cmd) on your Windows PC and type `ipconfig`. Note down your IPv4 Address (e.g., 192.168.1.x).
-   - **Access Router Admin Panel**: Open a web browser and enter your router's default gateway address (usually 192.168.1.1 or 192.168.0.1), this might varies on your router brands and settings. Log in with your admin credentials.
-   - **Create a Port Forwarding Rule**: Locate the "Port Forwarding" section in your router settings.
-   - **Map the Ports**: Add a new rule to forward external traffic to your PC.
-     - **Internal IP**: Enter your Windows PC's IPv4 address.
-     - **Internal/External Port**: Enter the ports for your configuration. In our setup, set the External Port to 443 and the Internal Port to 10013 (the port the Docker container listens to). Note: Using standard external ports (like 80 for HTTP or 443 for HTTPS) allows access via the URL without appending a port number. If a custom port is used, it must be included in the domain address.
-     - **Protocol**: Select TCP.
-   - **Save and apply the changes.**
- - **Enable ports in firewall settings(Windows Defender Firewall)**:
-   - Open the Start menu, search for Windows Defender Firewall, and open it.
-   - Click on Advanced settings on the left panel to open "Windows Defender Firewall with Advanced Security".
-   - Select Inbound Rules from the left pane, then click New Rule... on the right panel.
-   - **Rule Type**: Select Port and click Next.
-   - **Protocol and Ports**: Select TCP and specific local ports. Enter the port number your backend is running on (e.g., 80, 443, 10013), then click Next.
-   - **Action**: Select Allow the connection and click Next.
-   - **Profile**: Leave all profiles (Domain, Private, Public) checked, or select according to your network security preference.
-   - **Name**: Give your rule a recognizable name (e.g., Docker Backend API) and **click Finis**h.
+- **Port Forwarding(Router Settings)**:
+    - **Find your Local IP**: Open Command Prompt (cmd) on your Windows PC and type `ipconfig`. Note down your IPv4 Address (e.g., 192.168.1.x).
+    - **Access Router Admin Panel**: Open a web browser and enter your router's default gateway address (usually 192.168.1.1 or 192.168.0.1), this might varies on your router brands and settings. Log in with your admin credentials.
+    - **Create a Port Forwarding Rule**: Locate the "Port Forwarding" section in your router settings.
+    - **Map the Ports**: Add a new rule to forward external traffic to your PC.
+        - **Internal IP**: Enter your Windows PC's IPv4 address.
+        - **Internal/External Port**: Enter the ports for your configuration. In our setup, set the External Port to 443 and the Internal Port to 10013 (the port the Docker container listens to). Note: Using standard external ports (like 80 for HTTP or 443 for HTTPS) allows access via the URL without appending a port number. If a custom port is used, it must be included in the domain address.
+        - **Protocol**: Select TCP.
+    - **Save and apply the changes.**
+- **Enable ports in firewall settings(Windows Defender Firewall)**:
+    - Open the Start menu, search for Windows Defender Firewall, and open it.
+    - Click on Advanced settings on the left panel to open "Windows Defender Firewall with Advanced Security".
+    - Select Inbound Rules from the left pane, then click New Rule... on the right panel.
+    - **Rule Type**: Select Port and click Next.
+    - **Protocol and Ports**: Select TCP and specific local ports. Enter the port number your backend is running on (e.g., 80, 443, 10013), then click Next.
+    - **Action**: Select Allow the connection and click Next.
+    - **Profile**: Leave all profiles (Domain, Private, Public) checked, or select according to your network security preference.
+    - **Name**: Give your rule a recognizable name (e.g., Docker Backend API) and **click Finis**h.
 
 Note: If your public IP is dynamic, it is highly recommended to set up a DDNS (Dynamic DNS) service, to bind your changing public IP to a fixed domain name.
-
-
 
 **Step 3: Build and Start Containers**
 
@@ -180,15 +178,15 @@ Here we provide a guide using venv.
 Navigate to the root directory of the project, then run:
 
 - **macOS/Linux:**
-  ```bash
-  python3 -m venv venv
-  source venv/bin/activate
-  ```
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
 - **Windows:**
-  ```bash
-  python -m venv venv
-  venv\Scripts\activate
-  ```
+    ```bash
+    python -m venv venv
+    venv\Scripts\activate
+    ```
 
 **Step 2: Install dependencies**
 
@@ -203,13 +201,13 @@ pip install -r requirements.txt
 Before running Flask commands, you need to tell the CLI where your application lives. Run the command appropriate for your operating system:
 
 - **macOS/Linux:**
-  ```bash
-  export FLASK_APP=dbms
-  ```
+    ```bash
+    export FLASK_APP=dbms
+    ```
 - **Windows:**
-  ```bash
-  set FLASK_APP=dbms
-  ```
+    ```bash
+    set FLASK_APP=dbms
+    ```
 
 **Step 4: Initialize and populate the database**
 
@@ -256,11 +254,11 @@ We use Swagger UI for easy endpoint exploration. To view all available routes (l
 
 - **Cloud Production Deployment (Docker + NGINX):**
 
-  > **https://<your.host.ip>/api/docs/**
-  > _(Note: Since we use self-signed certificates, please click "Advanced" -> "Proceed/Continue" if your browser shows a security warning.)_
+    > **https://<your.host.ip>/api/docs/**
+    > _(Note: Since we use self-signed certificates, please click "Advanced" -> "Proceed/Continue" if your browser shows a security warning.)_
 
 - **Local Manual Setup (Flask dev server):**
-  > **http://localhost:5000/api/docs/**
+    > **http://localhost:5000/api/docs/**
 
 (This interface is automatically generated by reading `dbms/static/schema/swagger.yaml` file).
 
@@ -277,8 +275,8 @@ More information about testing, please refer to this document: [Readme before te
 
 # 5. Live Demo
 
-- Docs: https://edvic.ddns.net/api/docs/
-- Base Path: https://edvic.ddns.net
+- Docs: https://dbms.ddns.net:10013/api/docs/
+- Web App: https://zhouanqi1231.github.io/daily_bowl_page/ (Source Code: https://github.com/zhouanqi1231/daily_bowl)
 
 # 6. Deployment Configuration Tests
 
@@ -288,10 +286,12 @@ To verify that the production environment is properly configured, isolated, and 
 
 Ensure all isolated environments are running and managed by Docker.
 
-**Command:** 
+**Command:**
+
 ```bash
   docker compose ps
 ```
+
 **Expected Result:** `nginx` and `dbms-api` containers should display a status of `Up` and `Up (healthy)`.
 
 ### Test 2: Network Configuration Test
@@ -321,12 +321,12 @@ Check if the SQLite database is properly persisting data on the host machine, in
 ```bash
   ls -l instance/dbms.db
 ```
+
 - **Command (Windows CMD):**
 
 ```bash
   dir instance
 ```
-
 
 **Expected Result:** The file should exist and have a file size greater than 0 bytes after running the `populate-db` command.
 
