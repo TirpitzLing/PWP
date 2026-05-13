@@ -4,3 +4,4 @@ PWP/
 instance/cache/
 nginx/certs/*.crt
 nginx/certs/*.key
+instance/
