@@ -1,0 +1,137 @@
+openapi: "3.0.3"
+info:
+  title: "DBMS Report Service"
+  description: |
+    Auxiliary nutrition report generation service.
+
+    Creates PDF nutrition reports by aggregating recipe data from the DBMS API.
+    Jobs are processed asynchronously — POST to create, then poll GET until
+    `status: "done"`, then download the PDF.
+
+    **Base URL:** `https://dbms.ddns.net:10013/aux`
+  version: "1.0.0"
+
+servers:
+  - url: /aux
+    description: "Via nginx reverse proxy"
+
+paths:
+  /reports/:
+    post:
+      summary: "Create a report job"
+      operationId: createReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe_ids]
+              properties:
+                recipe_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: "IDs of recipes to include in the report"
+                  example: [3, 7, 12]
+      responses:
+        "202":
+          description: "Job created — processing started"
+          headers:
+            Location:
+              schema:
+                type: string
+              description: "URL to poll for job status"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportJob"
+        "400":
+          description: "Missing or invalid recipe_ids"
+
+  /reports/{job_id}/:
+    get:
+      summary: "Get job status and results"
+      operationId: getReportStatus
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Current job state"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportJob"
+        "404":
+          description: "Job not found"
+
+  /reports/{job_id}/download/:
+    get:
+      summary: "Download the PDF report"
+      operationId: downloadReport
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "PDF file"
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "409":
+          description: "Report not ready yet"
+        "404":
+          description: "Job or file not found"
+
+components:
+  schemas:
+    ReportJob:
+      type: object
+      properties:
+        id:
+          type: integer
+        recipe_ids:
+          type: array
+          items:
+            type: integer
+        status:
+          type: string
+          enum: [pending, running, done, failed]
+        total_calories:
+          type: number
+          nullable: true
+        total_carbs:
+          type: number
+          nullable: true
+        total_protein:
+          type: number
+          nullable: true
+        total_fat:
+          type: number
+          nullable: true
+        comparison_json:
+          type: string
+          nullable: true
+          description: "JSON-encoded comparison to standard daily intake"
+        pdf_path:
+          type: string
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
